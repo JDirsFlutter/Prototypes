@@ -35,6 +35,12 @@ export default function Home() {
             Tournament lobby
           </Link>
           <Link
+            href="/progressive-jackpot"
+            className="text-ps-body-medium inline-flex items-center justify-center h-12 px-6 rounded-full bg-ps-black text-ps-white hover:bg-ps-grey-70 transition-colors"
+          >
+            Royal Jackpot
+          </Link>
+          <Link
             href="/brand-check"
             className="text-ps-body-medium inline-flex items-center justify-center h-12 px-6 rounded-full bg-ps-grey-10 text-ps-black hover:bg-ps-grey-20 transition-colors"
           >

@@ -76,3 +76,14 @@ body {
   color: var(--color-ps-black);
   background: var(--color-ps-white);
 }
+
+@keyframes jackpot-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+.animate-jackpot-fall {
+  animation-name: jackpot-fall;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
