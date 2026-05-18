@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  PokerStars brand tokens
+  Source: Figma "Stars UI Toolkit" (file PWHAQuZxpzMUoTFeVwX1O7)
+  Synced 2026-05-18 via Figma REST API
+*/
+
+@theme {
+  --color-ps-brand-red: #D70A0A;
+
+  --color-ps-primary: #02BD9C;
+  --color-ps-primary-base: #F4FFFD;
+  --color-ps-primary-lighter-alt: #91F2E0;
+  --color-ps-primary-lighter: #36E7C7;
+  --color-ps-primary-light: #06D6AE;
+  --color-ps-primary-darker: #089B80;
+
+  --color-ps-white: #FFFFFF;
+  --color-ps-grey-10: #F5F5F5;
+  --color-ps-grey-20: #E0E0E0;
+  --color-ps-grey-30: #DDDDDD;
+  --color-ps-grey-40: #C0C0C0;
+  --color-ps-grey-41: #BFBFBF;
+  --color-ps-grey-50: #999999;
+  --color-ps-grey-60: #666666;
+  --color-ps-grey-69: #575757;
+  --color-ps-grey-70: #525252;
+  --color-ps-black: #000000;
+
+  --color-ps-success: #089B80;
+  --color-ps-success-base: #F5FCFB;
+  --color-ps-error: #D70022;
+  --color-ps-error-base: #FCF5F6;
+  --color-ps-warning: #CC3600;
+  --color-ps-warning-base: #FFF4EF;
+  --color-ps-info: #00599E;
+  --color-ps-info-base: #F5FAFB;
+  --color-ps-bonus: #572CA4;
+  --color-ps-bonus-base: #F5EFFE;
+
+  --font-ps-display: "Druk Text", "Druk Text Wide", "Inter", system-ui, sans-serif;
+  --font-ps-sans: var(--font-roboto), "Roboto", system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer utilities {
+  .text-ps-heading-lg   { font-family: var(--font-ps-display); font-weight: 500; font-size: 32px; line-height: 40px; }
+  .text-ps-heading-sm   { font-family: var(--font-ps-display); font-weight: 500; font-size: 24px; line-height: 32px; }
+  .text-ps-heading-xs   { font-family: var(--font-ps-display); font-weight: 500; font-size: 20px; line-height: 28px; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  .text-ps-title-lg     { font-family: var(--font-ps-sans); font-weight: 500; font-size: 20px; line-height: 30px; }
+  .text-ps-title-sm     { font-family: var(--font-ps-sans); font-weight: 500; font-size: 18px; line-height: 28px; }
+
+  .text-ps-body         { font-family: var(--font-ps-sans); font-weight: 400; font-size: 16px; line-height: 24px; }
+  .text-ps-body-medium  { font-family: var(--font-ps-sans); font-weight: 500; font-size: 16px; line-height: 24px; }
+  .text-ps-body-bold    { font-family: var(--font-ps-sans); font-weight: 700; font-size: 16px; line-height: 24px; }
+  .text-ps-body-link    { font-family: var(--font-ps-sans); font-weight: 700; font-size: 16px; line-height: 24px; text-decoration: underline; }
+
+  .text-ps-label        { font-family: var(--font-ps-sans); font-weight: 400; font-size: 15px; line-height: 24px; }
+
+  .text-ps-small        { font-family: var(--font-ps-sans); font-weight: 400; font-size: 14px; line-height: 20px; }
+  .text-ps-small-medium { font-family: var(--font-ps-sans); font-weight: 500; font-size: 14px; line-height: 20px; }
+  .text-ps-small-bold   { font-family: var(--font-ps-sans); font-weight: 700; font-size: 14px; line-height: 20px; }
+  .text-ps-small-link   { font-family: var(--font-ps-sans); font-weight: 700; font-size: 14px; line-height: 20px; text-decoration: underline; }
+
+  .text-ps-xsmall       { font-family: var(--font-ps-sans); font-weight: 400; font-size: 12px; line-height: 16px; }
+  .text-ps-xsmall-bold  { font-family: var(--font-ps-sans); font-weight: 700; font-size: 12px; line-height: 16px; }
+  .text-ps-xsmall-link  { font-family: var(--font-ps-sans); font-weight: 700; font-size: 12px; line-height: 16px; text-decoration: underline; }
+
+  .text-ps-numerical        { font-family: var(--font-ps-sans); font-weight: 400; font-size: 24px; line-height: 28px; }
+  .text-ps-numerical-medium { font-family: var(--font-ps-sans); font-weight: 500; font-size: 24px; line-height: 28px; }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ps-sans);
+  color: var(--color-ps-black);
+  background: var(--color-ps-white);
 }
