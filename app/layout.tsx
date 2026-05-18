@@ -12,6 +12,7 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "PokerStars Prototypes",
   description: "Internal prototypes against the PokerStars brand system.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({
