@@ -1,0 +1,51 @@
+name: Weekly Clarity digest
+
+on:
+  schedule:
+    # Mondays 08:00 UTC = 09:00 UK BST / 08:00 UK GMT
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clarity-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Generate digest
+        env:
+          CLARITY_TOKEN: ${{ secrets.CLARITY_TOKEN }}
+        run: |
+          if [ -z "$CLARITY_TOKEN" ]; then
+            echo "::error::CLARITY_TOKEN secret is not set"
+            exit 1
+          fi
+          node scripts/clarity-weekly-digest.mjs
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add clarity/digests/
+          if git diff --cached --quiet; then
+            echo "No changes — digest already up to date"
+            exit 0
+          fi
+          WEEK_FILE=$(git diff --cached --name-only | grep -E 'clarity/digests/.*\.md$' | head -1)
+          WEEK_TAG=$(basename "$WEEK_FILE" .md)
+          git commit -m "Weekly Clarity digest $WEEK_TAG"
+          git push origin HEAD:main
+      - name: Print digest body
+        if: success()
+        run: |
+          LATEST=$(ls -t clarity/digests/*.md | head -1)
+          echo "## $LATEST"
+          cat "$LATEST"
