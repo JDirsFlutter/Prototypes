@@ -41,6 +41,12 @@ export default function Home() {
             Royal Jackpot
           </Link>
           <Link
+            href="/big-jackpots"
+            className="text-ps-body-medium inline-flex items-center justify-center h-12 px-6 rounded-full bg-ps-black text-ps-white hover:bg-ps-grey-70 transition-colors"
+          >
+            Big Jackpots
+          </Link>
+          <Link
             href="/brand-check"
             className="text-ps-body-medium inline-flex items-center justify-center h-12 px-6 rounded-full bg-ps-grey-10 text-ps-black hover:bg-ps-grey-20 transition-colors"
           >
