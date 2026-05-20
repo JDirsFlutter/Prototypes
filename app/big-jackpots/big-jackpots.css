@@ -400,6 +400,26 @@
 .bj-root .bet-controls .quick{display:flex;gap:6px;margin-left:6px}
 .bj-root .bet-controls .quick button{height:40px;padding:0 14px;border-radius:20px;background:#1a1a1d;color:var(--ink-1);border:1px solid #2e2e34;font-size:12px;font-weight:600;cursor:pointer}
 
+/* Jackpot contribution feedback */
+.bj-root .jackpot.bj-bump{animation:bj-jp-bump .55s ease-out}
+@keyframes bj-jp-bump{
+  0%{transform:scale(1);box-shadow:0 14px 38px rgba(0,0,0,.55),0 0 0 1px rgba(240,180,26,.12),inset 0 1px 0 rgba(255,255,255,.05)}
+  35%{transform:scale(1.035);box-shadow:0 14px 38px rgba(0,0,0,.55),0 0 0 2px rgba(255,212,74,.8),0 0 32px rgba(240,180,26,.5),inset 0 1px 0 rgba(255,255,255,.05)}
+  100%{transform:scale(1);box-shadow:0 14px 38px rgba(0,0,0,.55),0 0 0 1px rgba(240,180,26,.12),inset 0 1px 0 rgba(255,255,255,.05)}
+}
+.bj-root .bj-floater{
+  font-size:14px;font-weight:700;color:var(--gold-bright);letter-spacing:.04em;
+  text-shadow:0 2px 8px rgba(0,0,0,.6),0 0 18px rgba(240,180,26,.4);
+  font-variant-numeric:tabular-nums;
+  animation:bj-float-up 1.4s ease-out forwards;
+  white-space:nowrap;
+}
+@keyframes bj-float-up{
+  0%{opacity:0;transform:translateY(8px)}
+  15%{opacity:1}
+  100%{opacity:0;transform:translateY(-40px)}
+}
+
 /* Crawler */
 .bj-root .crawl{position:absolute;left:0;right:0;bottom:130px;height:26px;display:flex;align-items:center;font-size:11.5px;color:var(--ink-3);overflow:hidden;letter-spacing:.04em;z-index:3;background:rgba(0,0,0,.55);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);backdrop-filter:blur(6px)}
 .bj-root .crawl .item{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding-left:24px}
