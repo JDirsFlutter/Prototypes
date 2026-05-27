@@ -265,6 +265,41 @@
   .menu-toggle { display: none; }
   .sidebar-backdrop { display: none; }
 
+  /* ── Audio playback controls ────────────────────────────────── */
+  .audio-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 28px 0;
+    flex-wrap: wrap;
+  }
+  .audio-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--navy); color: #FFFFFF;
+    border: 0; padding: 9px 16px;
+    border-radius: 8px;
+    font-family: "Poppins", sans-serif; font-weight: 500; font-size: 13px;
+    cursor: pointer; transition: background 120ms ease, transform 120ms ease;
+  }
+  .audio-btn:hover { background: #051a4d; transform: translateY(-1px); }
+  .audio-btn.playing { background: var(--accent); }
+  .audio-btn.playing:hover { background: var(--accent); filter: brightness(1.06); }
+  .audio-btn .audio-icon { font-size: 11px; line-height: 1; }
+
+  .audio-speed-btn {
+    background: var(--panel); color: var(--navy);
+    border: 1px solid var(--line); padding: 9px 12px;
+    border-radius: 8px;
+    font-family: "Poppins", sans-serif; font-weight: 600; font-size: 12px;
+    cursor: pointer; min-width: 50px;
+    transition: background 120ms ease;
+  }
+  .audio-speed-btn:hover { background: var(--panel-2); }
+  .audio-speed-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .audio-status { font-size: 12px; color: var(--muted); margin-left: 4px; }
+  .audio-unavailable { font-size: 12px; color: var(--muted); padding: 6px 0; }
+
   @media (max-width: 880px) {
     .app { grid-template-columns: 1fr; }
     .content { padding: 22px 18px 60px 18px; max-width: 100%; }
@@ -1967,6 +2002,7 @@ function defaultState() {
     lastCompletionDate: null,
     badges: {},
     celebrated: {},
+    audioRate: 1.0,
   };
 }
 function loadState() {
@@ -2070,6 +2106,7 @@ function renderNav() {
   homeEl.className = "nav-home" + (STATE.currentId === "__home" ? " active" : "");
   homeEl.innerHTML = `<span class="home-link-arrow">&#8962;</span><span>Home</span>`;
   homeEl.addEventListener("click", () => {
+    Audio.stop();
     STATE.currentId = "__home";
     saveState();
     renderAll();
@@ -2093,6 +2130,7 @@ function renderNav() {
       el.className = "topic" + (STATE.completed[t.id] ? " done" : "") + (STATE.currentId === t.id ? " active" : "");
       el.innerHTML = `<span class="check"></span><span class="label">${t.title}</span>`;
       el.addEventListener("click", () => {
+        if (Audio.currentTopicId !== t.id) Audio.stop();
         STATE.currentId = t.id;
         saveState();
         renderAll();
@@ -2176,6 +2214,7 @@ function renderHome() {
   `;
   document.getElementById("content").innerHTML = html;
   document.getElementById("homeStartBtn").addEventListener("click", () => {
+    Audio.stop();
     STATE.currentId = ctaTarget;
     saveState();
     renderAll();
@@ -2209,10 +2248,21 @@ function renderContent() {
        </div>`
     : "";
 
+  const audioControls = SPEECH_AVAILABLE
+    ? `<div class="audio-controls">
+         <button class="audio-btn" id="audioBtn" type="button" aria-label="Play audio">
+           <span class="audio-icon" id="audioIcon">&#9654;</span><span id="audioLabel">Listen</span>
+         </button>
+         <button class="audio-speed-btn" id="audioSpeedBtn" type="button" aria-label="Playback speed">${(STATE.audioRate || 1.0)}x</button>
+       </div>`
+    : `<div class="audio-unavailable">Audio playback isn't available in this browser.</div>`;
+
   const html = `
     <div class="crumbs"><span class="pill">${sectionName}</span> &nbsp; Topic ${idx + 1} of ${ALL_TOPICS.length}</div>
     <h2 class="topic-title">${t.title}</h2>
     <div class="meta">${isDone ? "You've got this one." : "Not done yet."}</div>
+
+    ${audioControls}
 
     ${whyCard}
 
@@ -2246,6 +2296,22 @@ function renderContent() {
   document.getElementById("prevBtn").addEventListener("click", () => goPrev());
   document.getElementById("nextBtn").addEventListener("click", () => goNext());
   document.getElementById("completeBtn").addEventListener("click", () => toggleComplete());
+
+  const audioBtn = document.getElementById("audioBtn");
+  if (audioBtn) {
+    audioBtn.addEventListener("click", () => {
+      if (Audio.playing && !Audio.paused) {
+        Audio.pause();
+      } else if (Audio.paused && Audio.currentTopicId === t.id) {
+        Audio.resume();
+      } else {
+        const queue = buildAudioQueueForTopic(t, isLastInSection, sectionExercise);
+        Audio.play(queue, t.id);
+      }
+    });
+    document.getElementById("audioSpeedBtn").addEventListener("click", () => Audio.cycleSpeed());
+  }
+  syncAudioUI();
 }
 
 function renderAll() {
@@ -2317,10 +2383,180 @@ window.addEventListener("resize", () => {
   if (!isMobile() && document.getElementById("sidebar").classList.contains("open")) closeDrawer();
 });
 
+/* ------------------------------------------------------------------
+   AUDIO PLAYBACK (Web Speech API)
+   ------------------------------------------------------------------ */
+const AUDIO_SPEEDS = [1.0, 1.25, 1.5, 2.0];
+const SPEECH_AVAILABLE = typeof window !== "undefined" && "speechSynthesis" in window;
+
+const Audio = {
+  queue: [],
+  index: 0,
+  playing: false,
+  paused: false,
+  currentTopicId: null,
+  keepAliveTimer: null,
+
+  play(items, topicId) {
+    this.stop();
+    if (!SPEECH_AVAILABLE || !items.length) return;
+    this.queue = items;
+    this.index = 0;
+    this.playing = true;
+    this.paused = false;
+    this.currentTopicId = topicId;
+    this._startKeepAlive();
+    this._next();
+    syncAudioUI();
+  },
+
+  _next() {
+    if (!this.playing || this.index >= this.queue.length) {
+      this.stop();
+      return;
+    }
+    const item = this.queue[this.index++];
+    const u = new SpeechSynthesisUtterance(item.text);
+    u.rate = STATE.audioRate || 1.0;
+    u.onend = () => this._next();
+    u.onerror = (e) => {
+      // Some browsers fire 'interrupted' when we cancel; that's fine
+      if (e && e.error && e.error !== "interrupted" && e.error !== "canceled") {
+        this.stop();
+      }
+    };
+    speechSynthesis.speak(u);
+  },
+
+  pause() {
+    if (!this.playing || this.paused) return;
+    speechSynthesis.pause();
+    this.paused = true;
+    syncAudioUI();
+  },
+
+  resume() {
+    if (!this.paused) return;
+    speechSynthesis.resume();
+    this.paused = false;
+    syncAudioUI();
+  },
+
+  stop() {
+    if (SPEECH_AVAILABLE) speechSynthesis.cancel();
+    this.queue = [];
+    this.index = 0;
+    this.playing = false;
+    this.paused = false;
+    this.currentTopicId = null;
+    this._stopKeepAlive();
+    syncAudioUI();
+  },
+
+  cycleSpeed() {
+    const cur = STATE.audioRate || 1.0;
+    const idx = AUDIO_SPEEDS.indexOf(cur);
+    const next = AUDIO_SPEEDS[(idx + 1) % AUDIO_SPEEDS.length];
+    STATE.audioRate = next;
+    saveState();
+    // If currently playing, restart from the current chunk at the new rate
+    if (this.playing && this.queue.length) {
+      const remaining = this.queue.slice(Math.max(0, this.index - 1));
+      const topic = this.currentTopicId;
+      this.stop();
+      this.play(remaining, topic);
+    } else {
+      syncAudioUI();
+    }
+  },
+
+  isActive() { return this.playing; },
+
+  _startKeepAlive() {
+    // Chrome's TTS goes silent after ~14s. Pulse pause/resume to keep it alive.
+    this._stopKeepAlive();
+    this.keepAliveTimer = setInterval(() => {
+      if (this.playing && !this.paused && speechSynthesis.speaking) {
+        speechSynthesis.pause();
+        speechSynthesis.resume();
+      }
+    }, 10000);
+  },
+  _stopKeepAlive() {
+    if (this.keepAliveTimer) {
+      clearInterval(this.keepAliveTimer);
+      this.keepAliveTimer = null;
+    }
+  },
+};
+
+function htmlToText(html) {
+  const d = document.createElement("div");
+  d.innerHTML = html || "";
+  return (d.textContent || d.innerText || "").replace(/\s+/g, " ").trim();
+}
+function extractParagraphs(html) {
+  const d = document.createElement("div");
+  d.innerHTML = html || "";
+  const ps = Array.from(d.querySelectorAll("p")).map(p => p.textContent.replace(/\s+/g, " ").trim()).filter(Boolean);
+  if (ps.length === 0) {
+    const t = htmlToText(html);
+    if (t) ps.push(t);
+  }
+  return ps;
+}
+function buildAudioQueueForTopic(t, isLastInSection, sectionExercise) {
+  const items = [];
+  items.push({ text: t.title + "." });
+  if (t.whyItMatters) {
+    items.push({ text: "Why it matters." });
+    items.push({ text: t.whyItMatters });
+  }
+  items.push({ text: "Lesson." });
+  extractParagraphs(t.lesson).forEach(p => items.push({ text: p }));
+  items.push({ text: "Mental model." });
+  items.push({ text: htmlToText(t.model) });
+  if (t.mistakes && t.mistakes.length) {
+    items.push({ text: "Common beginner mistakes." });
+    t.mistakes.forEach(m => items.push({ text: m }));
+  }
+  if (isLastInSection && sectionExercise) {
+    items.push({ text: "Try this in the real world." });
+    items.push({ text: htmlToText(sectionExercise) });
+  }
+  return items;
+}
+
+function syncAudioUI() {
+  const btn = document.getElementById("audioBtn");
+  const speed = document.getElementById("audioSpeedBtn");
+  const icon = document.getElementById("audioIcon");
+  const label = document.getElementById("audioLabel");
+  if (!btn || !icon || !label) return;
+  if (Audio.playing && !Audio.paused) {
+    btn.classList.add("playing");
+    icon.innerHTML = "&#9208;"; // ⏸
+    label.textContent = "Pause";
+  } else if (Audio.paused) {
+    btn.classList.add("playing");
+    icon.innerHTML = "&#9654;"; // ▶
+    label.textContent = "Resume";
+  } else {
+    btn.classList.remove("playing");
+    icon.innerHTML = "&#9654;";
+    label.textContent = "Listen";
+  }
+  if (speed) speed.textContent = (STATE.audioRate || 1.0) + "x";
+}
+
+// Stop audio when the tab closes or is hidden
+window.addEventListener("pagehide", () => Audio.stop());
+
 /* Celebration */
 function showCelebration(sectionName) {
   const def = BADGE_DEFS[sectionName];
   if (!def) return;
+  Audio.stop();
   document.getElementById("celBadge").textContent = def.icon;
   document.getElementById("celName").textContent = def.name;
   document.getElementById("celBlurb").textContent = def.blurb;
@@ -2349,11 +2585,11 @@ document.getElementById("celebration").addEventListener("click", (e) => {
 });
 function goNext() {
   const n = nextTopic(STATE.currentId);
-  if (n) { STATE.currentId = n.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
+  if (n) { Audio.stop(); STATE.currentId = n.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
 }
 function goPrev() {
   const p = prevTopic(STATE.currentId);
-  if (p) { STATE.currentId = p.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
+  if (p) { Audio.stop(); STATE.currentId = p.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
 }
 
 /* Reset / Export / Import */
