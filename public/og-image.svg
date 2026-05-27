@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1115"/>
+      <stop offset="100%" stop-color="#1a1f2c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7cc4ff"/>
+      <stop offset="100%" stop-color="#b78bff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.15" r="0.7">
+      <stop offset="0%" stop-color="#7cc4ff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#7cc4ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.1" cy="0.95" r="0.55">
+      <stop offset="0%" stop-color="#b78bff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#b78bff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- Diagonal beams -->
+  <g opacity="0.08">
+    <rect x="-100" y="430" width="1400" height="8" fill="url(#accent)" transform="rotate(-12 600 315)"/>
+    <rect x="-100" y="470" width="1400" height="2" fill="url(#accent)" transform="rotate(-12 600 315)"/>
+  </g>
+
+  <!-- Accent bar -->
+  <rect x="80" y="160" width="80" height="6" rx="3" fill="url(#accent)"/>
+
+  <!-- Title -->
+  <text x="80" y="290" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="108" font-weight="800" fill="#e6e8ee" letter-spacing="-2.5">LLM Engineering</text>
+  <text x="80" y="410" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="108" font-weight="800" fill="url(#accent)" letter-spacing="-2.5">in 84 lessons.</text>
+
+  <!-- Divider -->
+  <rect x="80" y="500" width="60" height="2" rx="1" fill="#262b3a"/>
+
+  <!-- Tagline -->
+  <text x="80" y="556" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="24" font-weight="400" font-style="italic" fill="#9aa3b2">made by James, stealing Dave's idea,</text>
+  <text x="80" y="590" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="24" font-weight="400" font-style="italic" fill="#9aa3b2">which he stole from Linkedin in the first place.</text>
+</svg>

@@ -1,0 +1,1834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LLM Engineering Course: Beginner to Advanced in 84 Topics</title>
+<meta name="description" content="A self-paced course covering 84 topics in modern LLM engineering and fine-tuning, from tokens and embeddings to agents, RAG, and deployment. Free, runs in your browser, progress saves locally." />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="LLM Engineering Course: Beginner to Advanced in 84 Topics" />
+<meta property="og:description" content="Tokens, embeddings, LoRA, RAG, agents, deployment. 84 topics. Free. Runs offline in your browser." />
+<meta property="og:image" content="og-image.svg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="LLM Engineering Course: Beginner to Advanced in 84 Topics" />
+<meta name="twitter:description" content="Tokens, embeddings, LoRA, RAG, agents, deployment. 84 topics. Free. Runs offline in your browser." />
+<meta name="twitter:image" content="og-image.svg" />
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #151821;
+    --panel-2: #1c2030;
+    --line: #262b3a;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --accent: #7cc4ff;
+    --accent-2: #b78bff;
+    --good: #5ddc9b;
+    --warn: #ffb86b;
+    --bad: #ff7a7a;
+    --code-bg: #0b0d12;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.55; }
+  a { color: var(--accent); }
+  button { font-family: inherit; }
+  .app { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--panel); border-right: 1px solid var(--line); height: 100vh; overflow-y: auto; position: sticky; top: 0; }
+  .brand { padding: 18px 18px 6px 18px; }
+  .brand h1 { font-size: 16px; margin: 0; letter-spacing: 0.2px; }
+  .brand p { font-size: 12px; color: var(--muted); margin: 4px 0 0 0; }
+  .progress-wrap { padding: 12px 18px 12px 18px; }
+  .progress-text { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .progress-bar { background: var(--panel-2); height: 8px; border-radius: 99px; overflow: hidden; }
+  .progress-fill { background: linear-gradient(90deg, var(--accent), var(--accent-2)); height: 100%; width: 0%; transition: width 240ms ease; }
+  .controls { padding: 4px 12px 12px 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .ctrl-btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 11px; cursor: pointer; }
+  .ctrl-btn:hover { background: #232838; }
+  .section-title { padding: 12px 18px 6px 18px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  .topic { padding: 8px 18px; cursor: pointer; font-size: 13.5px; display: flex; align-items: center; gap: 8px; border-left: 3px solid transparent; }
+  .topic:hover { background: #1a1f2c; }
+  .topic.active { background: #1a1f2c; border-left-color: var(--accent); }
+  .topic .check { width: 14px; height: 14px; border: 1px solid var(--line); border-radius: 3px; display: inline-block; flex: 0 0 14px; }
+  .topic.done .check { background: var(--good); border-color: var(--good); position: relative; }
+  .topic.done .check::after { content: "✓"; color: #0b1018; font-size: 10px; position: absolute; top: -2px; left: 2px; font-weight: 700; }
+  .topic.done .label { color: var(--muted); text-decoration: line-through; }
+  .content { padding: 36px 56px 80px 56px; max-width: 880px; }
+  .crumbs { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  h2.topic-title { font-size: 28px; margin: 0 0 6px 0; }
+  .meta { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; margin: 18px 0; }
+  .card h3 { margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .card.lesson h3 { color: var(--accent); }
+  .card.model h3 { color: var(--accent-2); }
+  .card.mistakes h3 { color: var(--warn); }
+  .card.exercise h3 { color: var(--good); }
+  .card p, .card ul { margin: 0 0 10px 0; }
+  .card ul { padding-left: 20px; }
+  .card li { margin-bottom: 4px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+  code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+  :not(pre) > code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line); }
+  .nav-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 32px; }
+  .nav-btn { background: var(--panel); border: 1px solid var(--line); color: var(--text); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .nav-btn:hover { background: #1c2030; }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .complete-btn { background: var(--good); color: #062014; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+  .complete-btn:hover { filter: brightness(1.08); }
+  .complete-btn.done { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+  .pill { display: inline-block; background: var(--panel-2); border: 1px solid var(--line); padding: 2px 8px; border-radius: 99px; font-size: 11px; color: var(--muted); }
+  .kbd { font-family: ui-monospace, monospace; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; font-size: 11px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .search { width: calc(100% - 36px); margin: 0 18px 6px 18px; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 6px; font-size: 13px; }
+  .search:focus { outline: none; border-color: var(--accent); }
+  .local-note { padding: 0 18px 10px 18px; font-size: 11px; line-height: 1.45; color: var(--muted); }
+  .tagline { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); text-align: center; font-style: italic; }
+  @media (max-width: 880px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { height: auto; position: relative; }
+    .content { padding: 24px 18px 60px 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>LLM Engineering Course</h1>
+      <p>84 topics, beginner to advanced</p>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-text"><span id="progressLabel">0 / 84</span><span id="progressPct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="resetBtn">Reset progress</button>
+      <button class="ctrl-btn" id="exportBtn">Export</button>
+      <button class="ctrl-btn" id="importBtn">Import</button>
+    </div>
+    <div class="local-note">Your progress saves locally in this browser. Use Export to back it up or move it to another device.</div>
+    <input class="search" id="search" placeholder="Search topics..." />
+    <nav id="nav"></nav>
+  </aside>
+  <main class="content" id="content"></main>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   COURSE DATA
+   Each topic: { id, title, lesson (HTML string), model, mistakes (array), exercise }
+   ------------------------------------------------------------------ */
+const COURSE = [
+  {
+    section: "Foundations",
+    topics: [
+      {
+        id: "llm-basics",
+        title: "LLM basics",
+        lesson: `<p>An <b>LLM</b> (Large Language Model) is a piece of software that learned to predict the next word by reading a huge chunk of the internet. That is the whole trick. Everything else (chat, code, agents, search) is built on top of "guess the next word, really really well."</p>
+<p>Think of an LLM like a person who read a million books and then plays a game: "I'll show you the start of a sentence, you finish it." After enough practice, the answers start sounding smart. But the model has no idea what is true. It just learned which words tend to follow which other words.</p>
+<p>Real-world analogy: it is like predictive text on your phone, but trained on the entire library of humanity, with much better memory of what came before.</p>`,
+        model: `<b>Mental model:</b> An LLM is a "next-word slot machine" that got very good at guessing. It does not "know" things. It pattern-matches based on what it saw during training.`,
+        mistakes: [
+          "Thinking the LLM 'understands' like a human. It does not. It predicts.",
+          "Assuming it has access to real-time information. By default, it does not.",
+          "Trusting confident answers as truth. Confidence and correctness are unrelated in LLMs."
+        ],
+        exercise: `Open ChatGPT, Claude, or any LLM. Ask the same question 3 times with slightly different phrasing. Notice how the answers differ. Write down what changed and what stayed the same. That variability is the slot machine talking.`
+      },
+      {
+        id: "how-ai-models-work",
+        title: "How AI models work",
+        lesson: `<p>An AI model is a giant maths function. You put numbers in, you get numbers out. The "model" is a set of weights (numbers) that decide how the input is transformed into the output.</p>
+<p>For an LLM, the input is text turned into numbers, and the output is a probability for every possible next word. The model picks one (usually the most likely, with some randomness), adds it to the input, and repeats. That loop is how you get a long answer.</p>
+<p>Daily-life analogy: imagine a coffee machine with thousands of knobs. Training is the process of slowly turning each knob so that, when you put in "good morning," it reliably outputs "how are you?" The knobs are the weights. Once trained, the machine is frozen.</p>`,
+        model: `Input → numbers → giant matrix multiplications → probabilities → next token → repeat. The "intelligence" lives in billions of frozen knob settings.`,
+        mistakes: [
+          "Believing models 'think' between requests. They don't. Each request is fresh maths.",
+          "Confusing the model file with the running process. The file is static; the inference engine is what does the work.",
+          "Assuming bigger always means smarter. Architecture and data matter more than raw size past a point."
+        ],
+        exercise: `Draw a 3-box diagram: [Your text] → [Model = frozen weights] → [Predicted next word]. Now extend it to show how the model loops to produce a full sentence. Keep this diagram nearby for the rest of the course.`
+      },
+      {
+        id: "tokens",
+        title: "Tokens",
+        lesson: `<p>An LLM does not see words. It sees <b>tokens</b>. A token is a chunk of text, sometimes a whole word ("cat"), sometimes a piece of a word ("ing"), sometimes a single character or a space.</p>
+<p>Why? Because there are too many possible words (especially across languages, code, names, emoji). Splitting into smaller reusable pieces means a vocabulary of around 50k-200k tokens can cover almost anything.</p>
+<p>Rough rule of thumb in English: <b>1 token ≈ 4 characters ≈ ¾ of a word</b>. So 1,000 words is roughly 1,300 tokens. Code, JSON and non-English text use more tokens per word.</p>
+<p>Why you care: you pay per token. Context limits are measured in tokens. Speed is measured in tokens per second.</p>`,
+        model: `Tokens are the model's "atoms." Words are molecules built from them. The model only ever reads and writes atoms.`,
+        mistakes: [
+          "Counting words instead of tokens when estimating cost or context use.",
+          "Forgetting that non-English text often uses 2-3x more tokens per word.",
+          "Thinking spaces and punctuation are free. They are usually tokens too."
+        ],
+        exercise: `Go to <code>platform.openai.com/tokenizer</code> (or any tokenizer playground). Paste a paragraph of English, then the same in French, then some JSON. Compare token counts. Notice how JSON is brutal.`
+      },
+      {
+        id: "tokenization",
+        title: "Tokenization",
+        lesson: `<p><b>Tokenization</b> is the process of turning your text into those tokens. The most common method is <b>Byte Pair Encoding (BPE)</b>: start with all single characters, then repeatedly merge the most common pair of tokens into a new token, until you have your target vocabulary size.</p>
+<p>So "playing" might be one token if it was common in training, or two tokens ("play" + "ing") if not.</p>
+<p>Different models use different tokenizers. The Llama tokenizer and the GPT tokenizer will split the same sentence differently. That matters when you switch models: same text, different token count, different cost.</p>`,
+        model: `Tokenization is a learned shorthand. Common words get short codes, rare ones get spelled out from smaller pieces.`,
+        mistakes: [
+          "Assuming all models use the same tokenizer. They don't.",
+          "Forgetting that tokenization happens before the model sees anything, so weird spacing or invisible characters can break things subtly.",
+          "Ignoring 'token boundary' bugs in prompts (e.g. trailing spaces changing model behaviour)."
+        ],
+        exercise: `In Python, install <code>tiktoken</code> and run:<br><pre><code>import tiktoken
+enc = tiktoken.get_encoding("cl100k_base")
+print(enc.encode("Hello, how are you doing today?"))</code></pre>Look at the integer IDs. Each one is a token.`
+      },
+      {
+        id: "context-windows",
+        title: "Context windows",
+        lesson: `<p>A <b>context window</b> is the maximum number of tokens a model can read and write in one go. Older GPT had 4k tokens. Modern models go from 128k to over 1 million tokens.</p>
+<p>It is the model's "working memory" for that single conversation. Anything outside the window is invisible. If your chat goes past the limit, older messages start getting cut off or summarised.</p>
+<p>Daily-life analogy: it is your desk. You can spread out only so many papers at once. Bigger desk = you can work with more documents simultaneously. But: bigger desk also means slower (more attention to compute) and more expensive.</p>`,
+        model: `Context window = how much the model can "see" at this exact moment. Outside it = doesn't exist.`,
+        mistakes: [
+          "Confusing context window with long-term memory. Once the request ends, the window is gone.",
+          "Assuming a 1M token window means you should fill it. Quality degrades at the edges (the 'lost in the middle' problem).",
+          "Forgetting that input tokens + output tokens both count against the window."
+        ],
+        exercise: `Take a long PDF you have. Estimate its tokens (chars / 4). Check which open models could fit it whole. Now think: would you actually want to send the whole thing, or chunk it and use RAG? You will revisit this in the RAG section.`
+      },
+      {
+        id: "embeddings",
+        title: "Embeddings",
+        lesson: `<p>An <b>embedding</b> is a list of numbers that represents the meaning of a piece of text. Same idea = nearby numbers. Different ideas = far apart numbers.</p>
+<p>Concretely, an embedding is a vector like <code>[0.12, -0.84, 0.33, ...]</code> with usually 768 to 3,072 dimensions. You can compare two embeddings using cosine similarity to see how related the original texts are.</p>
+<p>Real-world analogy: imagine plotting every sentence on a giant map. "I love pizza" sits near "Pizza is amazing" and far from "Quantum mechanics is hard." Embeddings are the coordinates on that map.</p>
+<p>This is the engine behind semantic search, RAG, clustering, and recommendation. You will use embeddings constantly.</p>`,
+        model: `Embeddings = meaning turned into coordinates. Closeness on the map = similarity in meaning.`,
+        mistakes: [
+          "Comparing embeddings from different models. They live in different spaces, the numbers are not interchangeable.",
+          "Using raw cosine values as 'percent similar.' They are relative, not absolute.",
+          "Embedding huge chunks of text. The longer the chunk, the more blurred the meaning."
+        ],
+        exercise: `Pick 5 sentences. Generate embeddings (OpenAI <code>text-embedding-3-small</code> or any open model via Hugging Face). Compute cosine similarity between all pairs. Confirm: similar sentences score higher.`
+      },
+      {
+        id: "transformers",
+        title: "Transformers",
+        lesson: `<p>The <b>Transformer</b> is the neural network architecture under almost every modern LLM (the "T" in GPT). It was introduced in the paper "Attention is All You Need" (2017) and replaced older recurrent designs.</p>
+<p>Key idea: instead of reading text word by word in order (like older models), a Transformer looks at all tokens at once and figures out, for each one, which other tokens matter most. That "looking at all at once" is what makes it fast on GPUs.</p>
+<p>Daily-life analogy: an old model reads a book one word at a time, top to bottom, never looking back. A Transformer spreads the whole page on a table and, for each word, draws arrows to every other word it cares about.</p>`,
+        model: `Transformer = a stack of layers where each layer does "look at every other token, decide who matters, mix their information together."`,
+        mistakes: [
+          "Thinking Transformers process text sequentially. Training is parallel; only generation is sequential.",
+          "Believing 'Transformer' means 'LLM.' Transformers also power vision, audio and protein models.",
+          "Conflating the architecture with the weights. Same architecture, different weights = totally different model."
+        ],
+        exercise: `Read just the abstract of "Attention is All You Need" (arxiv.org/abs/1706.03762). Don't try to follow the maths yet. Just notice the words "attention," "parallel," "no recurrence." That's the vibe.`
+      },
+      {
+        id: "attention",
+        title: "Attention mechanism",
+        lesson: `<p><b>Attention</b> is the trick that lets the Transformer mix information across tokens. For each token, attention computes: "how much should I listen to every other token in this sequence?"</p>
+<p>Mechanically: each token produces three vectors, called Query (Q), Key (K), and Value (V). The model multiplies your Query against everyone else's Keys to get a score, softmaxes the scores so they sum to 1, then uses those scores to mix everyone's Values together. That mix becomes your new representation.</p>
+<p>Daily-life analogy: you walk into a meeting and ask "who here knows about pricing?" (that is your Query). Everyone has a sign on them saying what they know (their Keys). You compare and rank. Then you actually take notes (Values) from the people whose signs matched best, weighted by how good a match they were.</p>`,
+        model: `Attention = "for each token, do a soft weighted average of every other token, where the weights are learned similarity scores."`,
+        mistakes: [
+          "Thinking attention is one thing. There are many 'attention heads' running in parallel, each learning to focus on different patterns.",
+          "Believing attention costs scale linearly with context. They are O(n²) by default, which is why long contexts are expensive.",
+          "Confusing self-attention (tokens within one sequence) with cross-attention (tokens between two sequences, used in encoder-decoder models)."
+        ],
+        exercise: `Take this sentence: "The trophy didn't fit in the suitcase because it was too big." Identify what "it" refers to. Now do the same for: "The trophy didn't fit in the suitcase because it was too small." That's attention resolving ambiguity using context.`
+      },
+      {
+        id: "parameters",
+        title: "Parameters",
+        lesson: `<p><b>Parameters</b> are the numbers (the knobs) that make up the model. A "7B parameter model" has 7 billion individually tunable numbers. These are the things training adjusts.</p>
+<p>More parameters generally means more capacity to learn patterns. But: more parameters also means more memory to load, more compute to run, and more data needed to train well without overfitting.</p>
+<p>Rough mental scale:</p>
+<ul>
+<li>1B-3B: tiny models. Run on phones. Good for narrow tasks.</li>
+<li>7B-13B: small models. Run on a laptop with a decent GPU.</li>
+<li>30B-70B: medium. Need serious hardware or quantization.</li>
+<li>100B+: large. Cloud only. GPT-4, Claude, etc. (exact numbers are usually secret).</li>
+</ul>`,
+        model: `Parameters = total knobs the model has. Roughly: more knobs = more skill ceiling, more cost, slower.`,
+        mistakes: [
+          "Equating parameter count with quality. A well-trained 8B can beat a poorly trained 70B on specific tasks.",
+          "Forgetting the rough VRAM rule: in fp16, model needs ~2x parameter count in GB. A 7B model ≈ 14GB. With quantization (e.g. Q4), divide by ~4.",
+          "Counting activated parameters vs total parameters in MoE models. Very different numbers."
+        ],
+        exercise: `Pick 3 popular open models (e.g. Llama 3.1 8B, Qwen 2.5 14B, Mistral 7B). Look up their parameter counts and estimate VRAM at fp16 and at 4-bit. Decide which would fit on your laptop GPU.`
+      },
+      {
+        id: "training-vs-inference",
+        title: "Training vs inference",
+        lesson: `<p>Two completely different phases. People mix these up constantly.</p>
+<p><b>Training</b>: you take a model with random weights, feed it tons of text, and slowly adjust every parameter so it predicts the next token better. This is slow (weeks/months), needs huge clusters of GPUs, and costs millions of dollars for frontier models.</p>
+<p><b>Inference</b>: you use a trained model to answer one prompt. The weights don't change. This is what you do every time you chat with ChatGPT.</p>
+<p>Analogy: training is like teaching a chef every recipe in the world (years of school). Inference is asking the chef to cook one specific dish (a few minutes). The chef does not learn from your one order.</p>`,
+        model: `Training = teaching (slow, expensive, rare). Inference = using (fast, cheap per call, constant).`,
+        mistakes: [
+          "Thinking ChatGPT 'learns' from your conversation. It does not, unless explicit fine-tuning happens later.",
+          "Comparing training cost to inference cost as if they are similar. Training is a one-off megabudget; inference is a per-request cost.",
+          "Believing you need to train from scratch to customise a model. You almost never do. Fine-tuning or RAG is enough."
+        ],
+        exercise: `Find one estimate online of (a) GPT-4 training cost and (b) the per-token API cost. Calculate how many tokens you'd have to buy to equal the training budget. The number is absurd. Internalise the gap.`
+      },
+      {
+        id: "open-closed",
+        title: "Open-source vs closed-source models",
+        lesson: `<p><b>Closed-source</b>: you access the model only through an API. The provider hosts it. You don't see the weights. Examples: GPT-4, Claude, Gemini.</p>
+<p><b>Open-source / open-weight</b>: the model weights are published. You can download them and run them on your own hardware. Examples: Llama, Mistral, Qwen, Gemma, DeepSeek.</p>
+<p>Trade-offs:</p>
+<ul>
+<li>Closed: usually higher quality (today), zero infra work, but you pay per token, your data leaves your network, and you cannot fine-tune deeply.</li>
+<li>Open: full control, you can fine-tune, run offline, predictable cost. But you manage GPUs, scaling, evals, security. And the very best frontier models are still closed.</li>
+</ul>
+<p>Most serious AI products today use both: closed APIs for hard tasks, open models for cheap/local/private tasks.</p>`,
+        model: `Closed = renting a Ferrari. Open = owning a kit car you can mod. Pick based on cost, privacy, customisation, and how hard the task is.`,
+        mistakes: [
+          "Calling 'open weight' the same as 'open source.' Open weight ≠ open data ≠ open training code.",
+          "Assuming open models are free. The model is free; the GPUs to serve it are not.",
+          "Locking into one provider. Always design your stack so you can swap models."
+        ],
+        exercise: `Pick one task you'd want AI to do (e.g. summarise customer support tickets). Sketch two versions: one with a closed API, one with a local open model. List cost, latency, privacy, and effort for each. Which wins?`
+      }
+    ]
+  },
+  {
+    section: "Datasets & Training",
+    topics: [
+      {
+        id: "sft-datasets",
+        title: "SFT datasets",
+        lesson: `<p><b>SFT</b> stands for <b>Supervised Fine-Tuning</b>. An SFT dataset is a list of (input, ideal output) pairs that you use to teach a base model how to behave.</p>
+<p>Example format:</p>
+<pre><code>{"prompt": "Translate to French: I love pizza", "response": "J'adore la pizza"}
+{"prompt": "Summarise: ...", "response": "..."}</code></pre>
+<p>This is how you turn a "raw" base model (good at predicting next token, useless at chat) into an "instruct" model that answers questions politely. It is the simplest and most common form of fine-tuning.</p>
+<p>Quality matters more than quantity. 1,000 hand-crafted examples often beat 100,000 noisy ones.</p>`,
+        model: `SFT dataset = a stack of "here is a question, here is the perfect answer" cards. You hand the cards to the model many times until it learns the style.`,
+        mistakes: [
+          "Using web-scraped noisy data for SFT. Garbage in, garbage out, faster than you'd think.",
+          "Making all examples too similar. The model will collapse to that one pattern.",
+          "Forgetting to include 'refusal' or 'edge case' examples. Then the model has no idea what to do when something weird comes in."
+        ],
+        exercise: `Write 10 SFT examples by hand for a specific task you care about (e.g. turning meeting notes into a Slack update in your voice). Keep them in a <code>.jsonl</code> file. You'll need them when we hit fine-tuning.`
+      },
+      {
+        id: "instruction-tuning",
+        title: "Instruction tuning",
+        lesson: `<p><b>Instruction tuning</b> is SFT but specifically with instructions and their answers. It is the recipe that turned GPT-3 (a base model) into ChatGPT (an instructable assistant).</p>
+<p>The dataset format usually looks like:</p>
+<pre><code>{"instruction": "Write a haiku about rain",
+ "input": "",
+ "output": "Soft drops on the roof..."}</code></pre>
+<p>Some datasets include an "input" slot for context, some don't. The famous public ones are Alpaca, Dolly, OpenAssistant, FLAN.</p>`,
+        model: `Instruction tuning = teaching the base model the game of "I ask, you answer cleanly." Same technique as SFT, just with one specific data shape.`,
+        mistakes: [
+          "Using only single-turn examples and then being surprised the model is bad at multi-turn chat.",
+          "Forgetting system prompts in the data. The model won't learn to respect them.",
+          "Mixing inconsistent formats. Pick one chat template and stick to it."
+        ],
+        exercise: `Look up the Alpaca dataset on Hugging Face. Read 5 random examples. Notice the pattern: instruction, optional input, response. Try to write one yourself that matches the style.`
+      },
+      {
+        id: "preference-datasets",
+        title: "Preference datasets",
+        lesson: `<p>A <b>preference dataset</b> has the format: prompt + chosen response + rejected response. Instead of teaching "this is the right answer," you teach "between these two answers, this one is better."</p>
+<pre><code>{"prompt": "How do I cook rice?",
+ "chosen": "Rinse the rice, then...",
+ "rejected": "Just microwave it for an hour."}</code></pre>
+<p>This is the fuel for RLHF and DPO (we cover both later). It captures nuance that SFT misses, like tone, helpfulness, or safety preferences.</p>
+<p>Coming up with the rejected response is the hard part. Often it's a worse model's answer, or an earlier version of the same model.</p>`,
+        model: `SFT teaches "do this." Preferences teach "this beats that." Comparison is easier to label than absolute correctness.`,
+        mistakes: [
+          "Assuming preferences are objective. They depend heavily on the labellers' values.",
+          "Building tiny preference datasets and expecting massive behaviour change. Preference tuning shifts style/tone more than knowledge.",
+          "Not checking inter-annotator agreement. If your labellers disagree a lot, the data is noisy."
+        ],
+        exercise: `Take one prompt you'd give an LLM. Write two responses: one great, one bad. Now write 5 more pairs. Notice how labelling preferences feels different (and often easier) than writing perfect answers from scratch.`
+      },
+      {
+        id: "synthetic-datasets",
+        title: "Synthetic datasets",
+        lesson: `<p><b>Synthetic data</b> means data generated by another model. You use a strong model (GPT-4, Claude) to produce training examples for a smaller model. This is how most modern open models are post-trained cheaply.</p>
+<p>Common pattern: "self-instruct" or "distillation." You prompt the big model with seed instructions, ask it to generate variations and answers, filter for quality, and feed the result into SFT for the small model.</p>
+<p>It is powerful but it has limits. The student model can only get as good as what the teacher would have said. And legal terms of some APIs forbid this for commercial models.</p>`,
+        model: `Synthetic data = the teacher LLM doing your homework so the student LLM can study from it.`,
+        mistakes: [
+          "Skipping the quality filter. Synthetic data is full of subtle errors and the model will happily learn them.",
+          "Ignoring API terms of service. Some forbid using outputs to train competing models.",
+          "Generating data that all sounds the same. Add diversity prompts, varying styles, edge cases."
+        ],
+        exercise: `Pick a task. Write 3 seed prompts. Use any frontier LLM to generate 10 more prompts + ideal answers in the same style. Read them critically. How many would you actually keep? That ratio is your real yield.`
+      },
+      {
+        id: "data-curation",
+        title: "Data curation",
+        lesson: `<p><b>Curation</b> is the art of picking which data goes into training, and how much. It is the single biggest lever on model quality after the architecture is fixed.</p>
+<p>Common curation steps:</p>
+<ul>
+<li><b>Filter</b> out toxic, low-quality, or duplicate text.</li>
+<li><b>Balance</b> the mix (code, math, English prose, multilingual, dialogue) according to what you want the model good at.</li>
+<li><b>Up-weight</b> high-value sources (textbooks, well-edited prose).</li>
+<li><b>Deduplicate</b>. Repeats inflate sample count without teaching new things.</li>
+</ul>
+<p>For fine-tuning specifically: a few hundred high-quality, diverse, well-formatted examples often beats tens of thousands of mediocre ones.</p>`,
+        model: `Curation = being a strict librarian for your model. Every example you keep shapes behaviour. Every duplicate is wasted attention.`,
+        mistakes: [
+          "Treating all data as equal. It isn't. Source quality varies wildly.",
+          "Skipping deduplication. Even 10% duplicates can warp behaviour.",
+          "Curating once and never iterating. Look at your model's failures, find data gaps, refill, retrain."
+        ],
+        exercise: `Take 50 of your SFT examples from earlier. Sort them by quality (your gut). Cut the bottom 20%. The remaining set is likely better than the full one.`
+      },
+      {
+        id: "dataset-cleaning",
+        title: "Dataset cleaning",
+        lesson: `<p>Cleaning is the unsexy plumbing that decides whether your fine-tune works. Typical operations:</p>
+<ul>
+<li><b>Remove duplicates</b> exact and near (use MinHash or simple hashing).</li>
+<li><b>Strip junk</b>: HTML tags, control characters, broken encodings.</li>
+<li><b>Filter by length</b>: kill 5-word "responses" and 50,000-token monsters.</li>
+<li><b>Language filter</b>: drop examples in languages you don't want.</li>
+<li><b>PII redaction</b>: scrub emails, phone numbers, names if sensitive.</li>
+<li><b>Quality scoring</b>: optionally rank with a small classifier or LLM-as-judge.</li>
+</ul>
+<p>Before/after metrics matter. Always log how many rows you cut and why.</p>`,
+        model: `Dataset cleaning = washing vegetables before cooking. You can skip it once, but eventually someone gets sick.`,
+        mistakes: [
+          "Over-cleaning. Stripping everything 'weird' can remove valid edge cases and make the model brittle.",
+          "Cleaning silently. Always log decisions so you can reverse one.",
+          "Forgetting to check character encoding. UTF-8 vs Latin-1 mismatches still happen in 2026."
+        ],
+        exercise: `Take any open dataset on Hugging Face (e.g. Dolly 15k). Write a 20-line Python script that prints: total rows, average length, language distribution, % duplicates. You now have a "data x-ray" tool.`
+      },
+      {
+        id: "dataset-formatting",
+        title: "Dataset formatting",
+        lesson: `<p>Formatting is matching your data to the exact <b>chat template</b> the model expects during training. Get this wrong and the model learns garbage.</p>
+<p>Modern chat models expect tokens like:</p>
+<pre><code>&lt;|im_start|&gt;system
+You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What is 2+2?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+4&lt;|im_end|&gt;</code></pre>
+<p>Each model family (Llama, Qwen, Mistral, Gemma) has its own template. Hugging Face's <code>apply_chat_template</code> is the safe way to do this.</p>
+<p>Also: pick one of JSONL, Parquet, or HF Datasets format and stick with it. Don't mix.</p>`,
+        model: `Formatting = wearing the dress code. The model only "hears" you if your data wears the uniform it was trained on.`,
+        mistakes: [
+          "Hand-rolling the chat template and missing one special token. Silent failure mode.",
+          "Forgetting the EOS token at the end of responses. Model never learns to stop.",
+          "Using a Llama template on a Qwen model and wondering why outputs are weird."
+        ],
+        exercise: `Pick one open chat model. Find its chat template (look on its HF model card). Format one of your SFT examples to match it byte-for-byte. This is a skill you will need every time you fine-tune.`
+      },
+      {
+        id: "fine-tuning-basics",
+        title: "Fine-tuning basics",
+        lesson: `<p><b>Fine-tuning</b> means continuing to train an existing model on your specific data, so its behaviour shifts in your direction. You start with someone else's smart base, and nudge it.</p>
+<p>Three flavours:</p>
+<ul>
+<li><b>Full fine-tune</b>: update every parameter. Expensive, needs lots of VRAM, gives the most change.</li>
+<li><b>LoRA / QLoRA</b>: train a tiny add-on while freezing the base. Cheap and effective for most use cases.</li>
+<li><b>Continued pretraining</b>: train on raw text (not Q&A pairs) to add new domain knowledge.</li>
+</ul>
+<p>When to fine-tune vs just use a better prompt or RAG: fine-tune when you want consistent style/format/behaviour, not when you want new facts (RAG is better for that).</p>`,
+        model: `Fine-tuning = adjusting an already-trained chef's seasoning preferences, not teaching them to cook from scratch.`,
+        mistakes: [
+          "Fine-tuning to inject facts. Facts forget; behaviour sticks. Use RAG for facts.",
+          "Fine-tuning before trying better prompts and RAG. Always try the cheap thing first.",
+          "Not holding out an eval set. You won't know if you improved or destroyed the model."
+        ],
+        exercise: `Take a task you currently solve with a long prompt. List: what is consistent across all your prompts (style/format) vs what changes (the actual content)? The consistent part is what fine-tuning could replace.`
+      },
+      {
+        id: "continued-pretraining",
+        title: "Continued pretraining",
+        lesson: `<p><b>Continued pretraining</b> (also called <b>domain-adaptive pretraining</b>) is when you keep training a base model on a big pile of <i>raw text</i> from your domain, not Q&A pairs. The goal is to inject vocabulary, facts, or style.</p>
+<p>Example: take Llama 3 base, train it on 10B tokens of medical literature, end up with a model that understands medical jargon natively. Then do SFT on top to make it a usable assistant.</p>
+<p>This is heavy. You need a lot of clean text and a lot of GPU. Most teams skip straight to SFT or LoRA. Continued pretraining only pays off when your domain is genuinely far from the base distribution (rare languages, hard sciences, niche code).</p>`,
+        model: `Continued pretraining = sending the model to a graduate programme in your field before you ask it to do the job.`,
+        mistakes: [
+          "Doing this when SFT or RAG would have been enough.",
+          "Skipping the SFT step afterwards. The model still won't follow instructions.",
+          "Catastrophic forgetting: the model gets great at your domain and worse at everything else. Mix in some general data to prevent this."
+        ],
+        exercise: `Imagine your company has 50GB of internal docs. Decide: would continued pretraining + SFT make sense, or would RAG be enough? Write your reasoning in 5 lines. There is no single right answer; the act of choosing is the point.`
+      },
+      {
+        id: "hallucination-reduction",
+        title: "Hallucination reduction",
+        lesson: `<p>A <b>hallucination</b> is when the model produces something confidently wrong. It is not the model "lying"; it is the model doing its job (predict plausible text) without any grounding in truth.</p>
+<p>Main ways to reduce hallucinations:</p>
+<ul>
+<li><b>RAG</b>: give the model the actual facts in the prompt. By far the biggest lever.</li>
+<li><b>Constrain</b>: use structured outputs (JSON schema, regex) to limit what the model can say.</li>
+<li><b>Cite</b>: ask the model to include source quotes. Easier to spot fabrications.</li>
+<li><b>Prompt</b>: tell it explicitly "if you don't know, say so." It actually helps.</li>
+<li><b>Smaller temperature</b>: less randomness = less creative fabrication on factual tasks.</li>
+<li><b>Tools</b>: let it call a calculator, search, or database instead of guessing.</li>
+</ul>`,
+        model: `Hallucinations are not a bug; they are the default. Grounding the model in real data is how you fight them.`,
+        mistakes: [
+          "Trying to 'fine-tune away' hallucinations on a small dataset. It rarely works and often makes them more confident.",
+          "Trusting citations the model invented. Always verify retrieved sources actually exist.",
+          "Assuming bigger models hallucinate less. They do somewhat, but they also hallucinate more confidently."
+        ],
+        exercise: `Take any model. Ask it for "5 books by [made-up author name]." Watch it invent titles. Now repeat with "if you don't know, say so." Compare. That gap is your prompt engineering ROI in one experiment.`
+      }
+    ]
+  },
+  {
+    section: "Fine-Tuning",
+    topics: [
+      {
+        id: "lora",
+        title: "LoRA",
+        lesson: `<p><b>LoRA</b> = Low-Rank Adaptation. It is the most popular fine-tuning method because it is cheap, fast, and works well.</p>
+<p>The trick: instead of updating the full giant weight matrices, you freeze them and add two tiny matrices (A and B) whose product (A·B) is the "change." You only train A and B. They might have 0.1% of the parameters of the base model.</p>
+<p>Result: a 7B model can be fine-tuned on a single 24GB GPU in hours, not days. The trained "LoRA adapter" is a small file (often under 200MB) you can swap in and out.</p>`,
+        model: `LoRA = sticking a small tunable layer onto a frozen big model. You train the small thing, the big thing stays untouched.`,
+        mistakes: [
+          "Setting rank too high. r=8 to r=64 is usually enough. Going to r=256 burns memory for little gain.",
+          "Targeting only the attention layers. Also adapting the MLP layers often improves quality.",
+          "Forgetting to merge or load the adapter at inference time. The base model alone is unchanged."
+        ],
+        exercise: `Read the LoRA paper abstract (arxiv 2106.09685). Note the two key numbers people tune: rank <code>r</code> and alpha. You will set these in every fine-tune you ever run.`
+      },
+      {
+        id: "qlora",
+        title: "QLoRA",
+        lesson: `<p><b>QLoRA</b> = LoRA on top of a <b>quantized</b> base model. The base is loaded in 4-bit precision (instead of 16-bit), which cuts memory by ~4x. The LoRA adapters are trained in higher precision.</p>
+<p>Why it matters: this is what makes fine-tuning a 70B model on consumer hardware possible. You can fit Llama 3.1 70B on a single 48GB GPU with QLoRA. Without it, you'd need a small cluster.</p>
+<p>Trade-off: very slight quality drop vs full-precision LoRA, but it is usually negligible compared to the cost saving.</p>`,
+        model: `QLoRA = LoRA, but the frozen base model is squished into 4-bit so it actually fits in your GPU.`,
+        mistakes: [
+          "Trying to merge a LoRA adapter back into a 4-bit base. Dequantize first.",
+          "Forgetting QLoRA training is slower per step than LoRA (extra dequant work) even though it uses less memory.",
+          "Using QLoRA when you have plenty of VRAM. Just use plain LoRA in that case."
+        ],
+        exercise: `On Hugging Face, find the <code>bitsandbytes</code> library docs and read about <code>load_in_4bit=True</code>. That single flag is most of what makes QLoRA work in practice.`
+      },
+      {
+        id: "dpo",
+        title: "DPO",
+        lesson: `<p><b>DPO</b> = Direct Preference Optimization. A simpler, faster, more stable alternative to RLHF.</p>
+<p>You feed it preference data (prompt, chosen, rejected). DPO directly adjusts the model so that the chosen response becomes more likely and the rejected one less likely, without needing a separate reward model or reinforcement learning.</p>
+<p>Result: takes a few hours, no exotic RL machinery, very stable, easy to debug. Most modern open chat models (Llama 3, Mistral, Qwen) use some form of DPO or its variants (IPO, KTO, SimPO).</p>`,
+        model: `DPO = "make the good answer more likely and the bad answer less likely, directly." No reward model, no PPO, no drama.`,
+        mistakes: [
+          "Running DPO on a base model without SFT first. DPO refines an instruction-tuned model; it doesn't create one.",
+          "Using too small a preference dataset. A few hundred is the minimum useful range; thousands is better.",
+          "Setting beta too low. Beta controls how strongly DPO pulls towards preferences vs staying close to the original."
+        ],
+        exercise: `Look at the TRL library's <code>DPOTrainer</code> example. Note the exact columns it expects: <code>prompt, chosen, rejected</code>. That is the contract you must hit with your data.`
+      },
+      {
+        id: "rlhf",
+        title: "RLHF",
+        lesson: `<p><b>RLHF</b> = Reinforcement Learning from Human Feedback. The original recipe behind ChatGPT, now mostly replaced by DPO for cost reasons.</p>
+<p>Three steps:</p>
+<ol>
+<li><b>SFT</b> the base model on instruction data.</li>
+<li>Train a <b>reward model</b> that predicts how much a human would like a given response.</li>
+<li>Use <b>PPO</b> (a reinforcement learning algorithm) to update the LLM so it produces responses that score higher on the reward model.</li>
+</ol>
+<p>RLHF is powerful but operationally painful: three models in memory at once, unstable training, tricky to debug. DPO collapses steps 2-3 into one direct loss function.</p>`,
+        model: `RLHF = "train a judge LLM to score responses, then make the main LLM chase higher scores." DPO skipped the judge.`,
+        mistakes: [
+          "Conflating 'reward hacking' with the model being smart. If a model finds a weird way to score high, that is a sign your reward model is broken.",
+          "Using RLHF in 2026 when DPO/IPO/KTO would do the same job with 1/10th the operational pain.",
+          "Forgetting the KL penalty. Without it, the model drifts too far from the SFT starting point and starts producing gibberish that the reward model happens to love."
+        ],
+        exercise: `Read the InstructGPT paper's high-level diagram (just the figures). Identify the three steps. This is the diagram every LLM engineer should be able to draw on a whiteboard.`
+      },
+      {
+        id: "quantization",
+        title: "Quantization",
+        lesson: `<p><b>Quantization</b> means storing the model's weights in fewer bits per number. Default is 16-bit (fp16 or bf16). You can squeeze down to 8-bit, 4-bit, even 2-bit.</p>
+<p>Why: VRAM is the bottleneck for running large models. 4-bit cuts memory by 4x and is barely distinguishable in quality for most tasks. 2-bit starts to hurt noticeably.</p>
+<p>Common formats:</p>
+<ul>
+<li><b>GGUF</b> (llama.cpp): runs on CPU and consumer GPUs.</li>
+<li><b>GPTQ</b>, <b>AWQ</b>: GPU-focused, often used with vLLM.</li>
+<li><b>bitsandbytes</b>: easy to use from Python/Hugging Face.</li>
+</ul>`,
+        model: `Quantization = rounding the model's numbers to use less memory. A bit of accuracy lost, a lot of memory saved.`,
+        mistakes: [
+          "Going straight to 2-bit and complaining the model is dumb. Try 4-bit first.",
+          "Quantizing without testing. Always run an eval set before and after.",
+          "Mixing quantization methods between training and inference. The behaviour can shift."
+        ],
+        exercise: `Pick one open model. Find its 4-bit GGUF version on Hugging Face. Compare file sizes: original fp16 vs Q4_K_M. The ratio is your memory budget secret weapon.`
+      },
+      {
+        id: "checkpoints",
+        title: "Model checkpoints",
+        lesson: `<p>A <b>checkpoint</b> is a snapshot of the model's weights (and optionally the optimizer state) saved to disk. During training, you save checkpoints every N steps so you can resume if something crashes and so you can compare versions.</p>
+<p>For inference, "checkpoint" often just means the model files themselves. When someone says "load the Llama 3.1 8B checkpoint," they mean load that specific set of weights.</p>
+<p>Practical tips:</p>
+<ul>
+<li>Keep the best 2-3 checkpoints by eval score, not just the latest.</li>
+<li>Tag checkpoints with hyperparameters, data version, and date so you can reproduce later.</li>
+<li>Optimizer state can be larger than the weights. Drop it once training is done.</li>
+</ul>`,
+        model: `Checkpoint = "save game" for a model. Same idea as Ctrl+S, just with billions of numbers.`,
+        mistakes: [
+          "Only keeping the final checkpoint. The best one is often a few steps earlier.",
+          "Not versioning data alongside checkpoints. Same code + different data = different model, untraceable.",
+          "Disk-filling: training runs can produce hundreds of GB of checkpoints. Set retention policies."
+        ],
+        exercise: `In your fine-tuning library of choice (Axolotl, Unsloth, TRL), find the <code>save_steps</code> and <code>save_total_limit</code> options. Decide a sensible setting for a 6-hour training run.`
+      },
+      {
+        id: "adapter-tuning",
+        title: "Adapter tuning",
+        lesson: `<p><b>Adapter tuning</b> is a family of methods (LoRA is the most famous member) where you freeze the base model and train small extra modules called adapters. The full family is sometimes called <b>PEFT</b> (Parameter-Efficient Fine-Tuning).</p>
+<p>Members include: LoRA, IA3, prefix tuning, prompt tuning, AdaLoRA, DoRA. Each tweaks a slightly different part of the architecture.</p>
+<p>Big practical benefit: you can store many adapters for the same base model and hot-swap them at inference time. One 7B base + 20 task-specific adapters = effectively 20 specialised models for the storage cost of one.</p>`,
+        model: `Adapters = small detachable add-ons that change the model's behaviour without touching the base. Like specialist lenses for a camera body.`,
+        mistakes: [
+          "Reinventing the wheel. PEFT library covers almost every adapter method already.",
+          "Stacking adapters carelessly. Combining two adapters trained separately can give unpredictable behaviour.",
+          "Not naming your adapters clearly. After 5 fine-tunes you will have no idea which one is which."
+        ],
+        exercise: `Open the Hugging Face PEFT library docs. Skim the list of methods. Pick one non-LoRA method (e.g. IA3) and read its short description. Knowing one alternative makes you a better LoRA user.`
+      },
+      {
+        id: "gguf",
+        title: "GGUF models",
+        lesson: `<p><b>GGUF</b> is a file format invented for the <b>llama.cpp</b> ecosystem. It packages the model weights, tokenizer, chat template, and metadata into one file (or a small set), optimised for CPU and consumer GPU inference.</p>
+<p>If you've ever downloaded a model to run with Ollama, LM Studio, or llama.cpp directly, you used GGUF. Suffixes like <code>Q4_K_M</code>, <code>Q5_K_S</code> tell you the quantization level.</p>
+<p>Practical guide:</p>
+<ul>
+<li><b>Q4_K_M</b>: best speed/quality trade-off for most users.</li>
+<li><b>Q5_K_M</b>: slightly better quality, slightly more memory.</li>
+<li><b>Q8_0</b>: near-original quality, but big.</li>
+<li><b>Q2_K</b>: only for desperate VRAM situations.</li>
+</ul>`,
+        model: `GGUF = "model in a box" file format for local inference. Same idea as MP3 for audio: a portable, compressed package the player just needs to open.`,
+        mistakes: [
+          "Mixing up GGUF with GGML. GGML was the old format. GGUF replaced it. Don't download GGML files in 2026.",
+          "Using a GGUF file with vLLM. vLLM doesn't speak GGUF; it wants Hugging Face safetensors or AWQ/GPTQ.",
+          "Picking quant levels by file size alone. Always check perplexity or run a quick eval."
+        ],
+        exercise: `Install Ollama or LM Studio. Pull a Q4_K_M version of any 7B model. Run a 10-message chat. You have now used GGUF.`
+      }
+    ]
+  },
+  {
+    section: "Inference & Optimization",
+    topics: [
+      {
+        id: "kv-cache",
+        title: "KV cache",
+        lesson: `<p>When a Transformer generates token by token, every new token needs to attend to every previous token. Naively, that means recomputing the Keys (K) and Values (V) for the entire prompt at every step. Expensive.</p>
+<p>The <b>KV cache</b> stores the K and V vectors for tokens already processed. New tokens just compute their own Q, K, V and read everyone else's K and V from the cache. Huge speedup.</p>
+<p>Cost: the cache lives in GPU memory. It grows with context length, batch size, and number of layers. For long contexts, the KV cache can be larger than the model itself.</p>`,
+        model: `KV cache = the model's "scratchpad" of what it already computed for the prompt. Without it, generation is O(n²). With it, O(n).`,
+        mistakes: [
+          "Forgetting KV cache when budgeting VRAM. Long-context inference is KV-cache-bound, not weights-bound.",
+          "Trying to reuse KV cache across different prompts. The cache is prompt-specific (though prompt caching tricks exist).",
+          "Ignoring techniques like grouped-query attention (GQA) and KV cache quantization, which can shrink the cache substantially."
+        ],
+        exercise: `Estimate KV cache size for a 70B model with 80 layers, 64 heads, 128 head dim, 32k context, fp16. (Formula: 2 × layers × heads × head_dim × context × 2 bytes.) The number is sobering.`
+      },
+      {
+        id: "flash-attention",
+        title: "Flash Attention",
+        lesson: `<p><b>Flash Attention</b> is a way to compute attention that is mathematically identical to the standard version but radically more memory-efficient and faster on modern GPUs.</p>
+<p>The trick: it never writes the full attention matrix (size n × n) to slow GPU memory. Instead, it streams blocks through fast on-chip memory and combines the results cleverly. Hardware-aware engineering, not a new algorithm.</p>
+<p>Result: 2-4x faster attention, much less memory used, longer contexts feasible. It is now the default in PyTorch, vLLM, and most modern inference engines.</p>`,
+        model: `Flash Attention = "same maths, smarter memory layout." The algorithm didn't change; the way it talks to GPU memory did.`,
+        mistakes: [
+          "Treating Flash Attention as something you 'install.' Usually it's a flag you enable, or it's already on.",
+          "Assuming it changes outputs. It doesn't. Same numbers, just faster.",
+          "Using v1 when v2 or v3 is available. Each version is meaningfully faster."
+        ],
+        exercise: `Search "flash attention 3 paper". Read the first page. Note the speedup vs FA2. You don't need to follow the CUDA; just absorb that smarter memory access alone unlocks huge wins.`
+      },
+      {
+        id: "speculative-decoding",
+        title: "Speculative decoding",
+        lesson: `<p>Generation is slow because each token must wait for the previous one. <b>Speculative decoding</b> attacks this by using a small fast model to "guess ahead" several tokens, then the big model verifies them all in one pass.</p>
+<p>If the big model agrees with the guesses, you got several tokens in the time of one. If it disagrees, you fall back to the standard token. Either way, the final output is exactly what the big model would have produced alone.</p>
+<p>Result: typical 2-3x speedup at inference, completely free in terms of quality.</p>`,
+        model: `Speculative decoding = a fast assistant types out a draft, the slow expert checks it in one glance, you keep the agreed parts. Same final text, less waiting.`,
+        mistakes: [
+          "Picking a draft model too different from the big model. Low acceptance rate = no speedup.",
+          "Using speculative decoding on tiny batch sizes only. Some inference engines disable it under load.",
+          "Confusing speculative decoding with 'medusa heads' or 'lookahead decoding.' Related family, different mechanics."
+        ],
+        exercise: `Look up "EAGLE-2 speculative decoding" or "Medusa." Pick one. Read just the front page. Note the typical acceptance rate (it's surprisingly high).`
+      },
+      {
+        id: "inference-optimization",
+        title: "Inference optimization",
+        lesson: `<p>"Make inference cheaper and faster" is a whole field. The main levers, in rough order of impact:</p>
+<ul>
+<li><b>Batching</b>: serve many requests on the same GPU in parallel.</li>
+<li><b>KV cache management</b>: reuse, share, quantize the cache.</li>
+<li><b>Quantization</b>: 4-bit weights cut compute and memory.</li>
+<li><b>Flash Attention</b>: faster attention kernels.</li>
+<li><b>Speculative decoding</b>: parallelise across tokens.</li>
+<li><b>Tensor / pipeline parallelism</b>: split a big model across many GPUs.</li>
+<li><b>Continuous batching</b>: don't wait for slow requests to finish before starting new ones (vLLM's signature trick).</li>
+</ul>
+<p>You rarely build these yourself. You pick an engine (vLLM, TensorRT-LLM, SGLang, llama.cpp) that does most of them for you.</p>`,
+        model: `Inference optimization = squeezing more tokens per second per dollar out of the same GPU, mostly by being clever about memory and batching.`,
+        mistakes: [
+          "Optimising before measuring. Profile first, optimise second.",
+          "Picking an engine based on hype, not on your workload (long context vs high throughput vs low latency).",
+          "Forgetting that the slowest part might be the network, not the GPU."
+        ],
+        exercise: `Pick one open model. Estimate tokens/second on a single A100 using each of: llama.cpp, vLLM, TensorRT-LLM. (Public benchmarks exist.) Compare. Now you know roughly what each engine is for.`
+      },
+      {
+        id: "model-serving",
+        title: "Model serving",
+        lesson: `<p><b>Model serving</b> is the engineering of "take this model and expose it as an API that scales, retries, batches, monitors, and doesn't fall over."</p>
+<p>Typical stack components:</p>
+<ul>
+<li><b>Inference engine</b>: vLLM, TGI, TensorRT-LLM, SGLang, llama.cpp server.</li>
+<li><b>Front HTTP server</b>: FastAPI, Litestar, or built into the engine.</li>
+<li><b>Load balancer</b>: routes to multiple replicas.</li>
+<li><b>Autoscaling</b>: add/remove replicas based on queue depth.</li>
+<li><b>Observability</b>: token throughput, latency p50/p95/p99, error rates.</li>
+<li><b>Guardrails</b>: content filters, rate limiting, abuse detection.</li>
+</ul>`,
+        model: `Model serving = the rest of the iceberg under your API call. The model is 10%; the serving infra is 90%.`,
+        mistakes: [
+          "Putting one model behind one process and calling it 'production.' First spike kills it.",
+          "Ignoring tail latency. p99 is what your users feel, not p50.",
+          "Skipping graceful degradation. When the model is overloaded, what do you serve? An error? A cached response? A smaller model? Decide upfront."
+        ],
+        exercise: `Sketch the architecture for serving a 70B model to 1,000 concurrent users with p95 < 2 seconds. List every component. You'll find the model file is the smallest box on the page.`
+      },
+      {
+        id: "batch-inference",
+        title: "Batch inference",
+        lesson: `<p><b>Batch inference</b> = processing many prompts in one GPU pass. GPUs love batches; a batch of 32 prompts barely takes longer than a single prompt because the GPU was mostly idle on the single one.</p>
+<p>Two flavours:</p>
+<ul>
+<li><b>Static batching</b>: fill a batch, run, return all results together. Simple. Bad for variable-length outputs because the whole batch waits for the slowest one.</li>
+<li><b>Continuous batching</b> (a.k.a. dynamic / in-flight batching): new requests can join an ongoing batch on the next token step. vLLM popularised this and it is now standard. Throughput goes up by 5-10x in real traffic.</li>
+</ul>`,
+        model: `Batching = carpooling for tokens. One trip moves many passengers. Continuous batching = passengers can hop on and off mid-route.`,
+        mistakes: [
+          "Running an inference engine that doesn't do continuous batching for a chat workload. You're leaving most of your GPU idle.",
+          "Cranking batch size too high and blowing past VRAM, causing OOM crashes.",
+          "Forgetting that latency per request goes up slightly inside a big batch. You trade single-request speed for total throughput."
+        ],
+        exercise: `Take any vLLM example. Send 1 request, then 16 requests in parallel. Compare total time. The ratio is your batching value in one experiment.`
+      },
+      {
+        id: "gpu-basics",
+        title: "GPU basics",
+        lesson: `<p>A GPU is a chip with thousands of small cores designed for the same operation on many numbers at once. That is exactly what neural networks need: huge matrix multiplications.</p>
+<p>Key specs to know:</p>
+<ul>
+<li><b>VRAM</b>: how much model + cache + activations fit. The hardest limit.</li>
+<li><b>Memory bandwidth</b>: how fast you can move data between VRAM and the compute cores. Often the real bottleneck for inference.</li>
+<li><b>FLOPs</b>: raw compute throughput. Matters for training, less for inference.</li>
+<li><b>Generation</b>: Ampere (A100, RTX 30xx), Hopper (H100), Blackwell (B100/B200), RTX 40xx, 50xx.</li>
+</ul>
+<p>Rule of thumb in 2026: for LLM inference, you are usually memory-bandwidth-bound, not FLOPs-bound.</p>`,
+        model: `GPU = a giant choir all singing the same note at once. Perfect for matrix maths, terrible for serial logic.`,
+        mistakes: [
+          "Buying a GPU based on FLOPs when memory bandwidth is what matters for inference.",
+          "Confusing 'datacentre' GPUs (H100, A100) with 'consumer' GPUs (RTX 4090, 5090). Same family, very different software support.",
+          "Ignoring NVLink / PCIe bandwidth when planning multi-GPU setups."
+        ],
+        exercise: `Look up the VRAM, memory bandwidth, and FLOPs for: RTX 4090, A100 80GB, H100 80GB, B200. Notice the gap between consumer and datacentre. This map will guide every hardware choice you make.`
+      },
+      {
+        id: "vram-basics",
+        title: "VRAM basics",
+        lesson: `<p><b>VRAM</b> = video memory on the GPU. Everything the model needs during inference lives here: weights, KV cache, activations, overhead.</p>
+<p>Rough budget for inference:</p>
+<ul>
+<li><b>Weights</b>: parameters × bytes-per-param. e.g. 7B fp16 ≈ 14GB; 7B 4-bit ≈ 4GB.</li>
+<li><b>KV cache</b>: grows with context × batch. Can easily exceed weights for long contexts.</li>
+<li><b>Activations + overhead</b>: ~1-3GB.</li>
+</ul>
+<p>If model + KV cache + overhead > VRAM, you crash. You can: quantize, shorten context, smaller batch, or split across multiple GPUs.</p>`,
+        model: `VRAM = the GPU's desk. Everything for the current task has to fit on the desk simultaneously. Run out of desk, run out of luck.`,
+        mistakes: [
+          "Calculating VRAM only from model size. KV cache and overhead are real.",
+          "Assuming 'fits at startup' = 'fits under load.' Concurrent requests inflate KV cache.",
+          "Forgetting the OS, CUDA runtime, and other processes also reserve some VRAM."
+        ],
+        exercise: `For a 13B model at fp16, context 16k, batch 4: estimate weights, KV cache, total. Decide: does it fit on a 24GB GPU? What if you quantize to 4-bit? This is the kind of napkin maths you'll do constantly.`
+      },
+      {
+        id: "latency-quality",
+        title: "Latency vs quality tradeoffs",
+        lesson: `<p>You almost always trade speed against quality. The dials:</p>
+<ul>
+<li><b>Model size</b>: bigger = smarter and slower.</li>
+<li><b>Quantization</b>: lower bits = faster, marginally dumber.</li>
+<li><b>Sampling</b>: greedy is fastest, beam search slowest, top-p in between.</li>
+<li><b>Reasoning length</b>: "think step by step" or reasoning models add latency for accuracy.</li>
+<li><b>Context length</b>: longer prompts = slower prefill = higher time-to-first-token.</li>
+<li><b>Caching</b>: prompt cache hits can cut latency by 10x.</li>
+</ul>
+<p>Product question: what is "good enough quality at acceptable latency" for <i>this</i> use case? An autocomplete tolerates 100ms and dumb-but-fast. A medical summary tolerates 10s and demands smart.</p>`,
+        model: `Latency and quality are on a slider. Your job is to put the slider at the right place for the product, not at the maximum on either side.`,
+        mistakes: [
+          "Optimising for either axis in isolation. Always think product-first.",
+          "Treating latency as a single number. Time-to-first-token, tokens-per-second, and total time all matter differently.",
+          "Forgetting users perceive streaming responses as much faster, even with the same total time."
+        ],
+        exercise: `For three products you use (autocomplete, ChatGPT, an AI image generator), guess their latency tolerance and quality bar. Where would each one's slider be? You'll start to feel the trade-off intuitively.`
+      }
+    ]
+  },
+  {
+    section: "Local AI Ecosystem",
+    topics: [
+      {
+        id: "llama-cpp",
+        title: "llama.cpp",
+        lesson: `<p><b>llama.cpp</b> is a C++ project that runs LLMs on almost any hardware: CPU only, Apple Silicon, NVIDIA, AMD, even Raspberry Pi. Tiny dependency footprint, very fast on CPU, foundational to the local-AI movement.</p>
+<p>It introduced the GGUF format and is the engine under Ollama, LM Studio, Jan, and many other consumer tools.</p>
+<p>You'd use it directly when you want maximum control, minimal install, or you're embedding inference into another app.</p>`,
+        model: `llama.cpp = the engine. Ollama, LM Studio, and others are dashboards bolted on top of it.`,
+        mistakes: [
+          "Trying to run unquantized models on CPU and getting frustrated by the speed. Quantize first.",
+          "Building from source on Windows without setting the right compiler. Just use a prebuilt binary.",
+          "Ignoring the server mode (<code>llama-server</code>). It speaks an OpenAI-compatible API and is great for local apps."
+        ],
+        exercise: `Download a small GGUF model. Run <code>llama-cli -m model.gguf -p "Hello"</code>. You now have a working local LLM with zero cloud dependency.`
+      },
+      {
+        id: "ollama",
+        title: "Ollama",
+        lesson: `<p><b>Ollama</b> is "Docker for local models." One command pulls a model, one command runs it, it serves an OpenAI-compatible API on <code>localhost:11434</code>.</p>
+<p>It is built on llama.cpp under the hood but hides all the flags. Ideal for: developers who want a local model running in 30 seconds, prototyping, side projects, privacy-sensitive demos.</p>
+<p>Common commands:</p>
+<pre><code>ollama pull llama3.1
+ollama run llama3.1
+ollama list
+ollama serve  # API server</code></pre>`,
+        model: `Ollama = "brew install" for LLMs. Friction goes to zero, control goes down a bit. Worth the trade for most local work.`,
+        mistakes: [
+          "Using Ollama in production for high throughput. It is not optimised for serving thousands of users; use vLLM for that.",
+          "Forgetting to set a context length. Default is often shorter than you want.",
+          "Confusing the Modelfile (Ollama's customisation file) with full fine-tuning. It only changes prompts and sampling, not weights."
+        ],
+        exercise: `Install Ollama. Pull <code>llama3.2:3b</code>. Run a chat. Then hit the API:<br><pre><code>curl http://localhost:11434/api/chat -d '{"model":"llama3.2:3b","messages":[{"role":"user","content":"Hi"}]}'</code></pre>That is your local LLM, now scriptable.`
+      },
+      {
+        id: "vllm",
+        title: "vLLM",
+        lesson: `<p><b>vLLM</b> is a high-throughput inference engine designed for serving LLMs in production. Key innovations: <b>PagedAttention</b> (manages KV cache like virtual memory) and continuous batching.</p>
+<p>It speaks the OpenAI API, so dropping it in behind your existing OpenAI client is usually a one-line change. It is what most serious self-hosters use behind the scenes.</p>
+<p>Trade-offs: GPU only (no CPU mode), heavier install than Ollama, picky about model formats (Hugging Face safetensors, AWQ, GPTQ; not GGUF).</p>`,
+        model: `vLLM = the production serving engine. Ollama for dev, vLLM for traffic.`,
+        mistakes: [
+          "Running vLLM with GGUF and being confused why it errors. Use AWQ or GPTQ instead.",
+          "Underutilising it by sending one request at a time. Its batching shines only with concurrency.",
+          "Ignoring tensor parallelism settings on multi-GPU. Defaults are not always optimal."
+        ],
+        exercise: `Read the vLLM "OpenAI-compatible server" docs section. Note one command spins up a server. Try it on a small model if you have a GPU available.`
+      },
+      {
+        id: "mlx",
+        title: "MLX",
+        lesson: `<p><b>MLX</b> is Apple's machine learning framework, optimised for Apple Silicon (M1/M2/M3/M4). It uses unified memory: the GPU and CPU share the same RAM, which means a MacBook with 64GB unified memory can effectively run a 70B model.</p>
+<p>There are two flavours people use:</p>
+<ul>
+<li><b>MLX</b> (the framework itself) for custom Python work.</li>
+<li><b>mlx-lm</b> for running quantized LLMs from the command line, similar to llama.cpp.</li>
+</ul>
+<p>For Mac users it is often the fastest local option, beating llama.cpp on the same hardware.</p>`,
+        model: `MLX = "PyTorch tuned for Apple Silicon." Unified memory means giant models on laptops without ceremony.`,
+        mistakes: [
+          "Trying to run MLX on non-Apple hardware. It only works on Apple Silicon.",
+          "Forgetting that MLX models on Hugging Face are a separate format. Use the <code>mlx-community</code> org.",
+          "Ignoring it because 'Mac.' If you have a Mac with 32GB+ RAM, it is genuinely one of the best local inference paths."
+        ],
+        exercise: `If you have an Apple Silicon Mac: <code>pip install mlx-lm</code>, then <code>python -m mlx_lm.generate --model mlx-community/Llama-3.2-3B-Instruct-4bit --prompt "Hi"</code>. Note tokens/second.`
+      },
+      {
+        id: "huggingface",
+        title: "Hugging Face",
+        lesson: `<p><b>Hugging Face</b> is the GitHub of AI. It hosts models, datasets, demo apps (Spaces), papers, and the de facto Python libraries: <code>transformers</code>, <code>datasets</code>, <code>peft</code>, <code>trl</code>, <code>accelerate</code>.</p>
+<p>You will use it for:</p>
+<ul>
+<li>Discovering and downloading models and datasets.</li>
+<li>Loading models in code with three lines.</li>
+<li>Pushing your own fine-tuned models for reuse.</li>
+<li>Reading model cards (the README explaining licence, training data, intended use).</li>
+</ul>`,
+        model: `Hugging Face = the universal hub. If something AI-related exists, there is a chance you can find or share it here.`,
+        mistakes: [
+          "Ignoring model licences. Not every 'open' model is commercially usable. Always check.",
+          "Cloning huge repos with <code>git clone</code>. Use <code>huggingface_hub</code> for selective downloads.",
+          "Treating model cards as decoration. Reading them saves hours of 'why is this model weird' debugging."
+        ],
+        exercise: `Make a Hugging Face account. Find the Llama 3.1 8B Instruct model card. Read the "Intended Use" and "Limitations" sections. Notice how much info is there if you bother to read.`
+      },
+      {
+        id: "unsloth",
+        title: "Unsloth",
+        lesson: `<p><b>Unsloth</b> is a fine-tuning library that wraps Hugging Face Transformers and adds custom CUDA kernels. Result: 2-5x faster fine-tuning, half the VRAM, same final quality.</p>
+<p>It is the easiest way to fine-tune a 7B-70B model on a single consumer or rented GPU. Notebooks are well documented, defaults are sane, and it supports LoRA, QLoRA, DPO, and continued pretraining.</p>`,
+        model: `Unsloth = "fine-tuning on easy mode." Same algorithms, faster runtime, fewer footguns.`,
+        mistakes: [
+          "Skipping Unsloth and writing raw Transformers training loops. You're paying a 2-3x speed tax for no reason on common workflows.",
+          "Mixing Unsloth-specific code with vanilla Transformers code in ways that break the optimisations.",
+          "Not exporting to GGUF after training when you wanted to run locally."
+        ],
+        exercise: `Open one of Unsloth's free Colab notebooks (search "Unsloth Llama 3 fine-tune colab"). Read top to bottom without running. Note how few lines of code do the actual training.`
+      },
+      {
+        id: "axolotl",
+        title: "Axolotl",
+        lesson: `<p><b>Axolotl</b> is a fine-tuning framework configured by YAML. You describe the model, dataset, method, and hyperparameters in a config file, then run one command.</p>
+<p>It is more powerful and flexible than Unsloth but a bit heavier. Preferred by teams who do many fine-tunes and want reproducible, version-controlled configs.</p>
+<p>Supports: SFT, DPO, full fine-tuning, LoRA, QLoRA, multi-GPU, FSDP, DeepSpeed, custom datasets, custom chat templates.</p>`,
+        model: `Axolotl = "fine-tuning as configuration." If Unsloth is a nice notebook, Axolotl is a serious build pipeline.`,
+        mistakes: [
+          "Hand-editing configs until they work and then losing the working version. Commit configs to git.",
+          "Skipping the eval section in the YAML. Without it, you have no idea if training improved anything.",
+          "Treating defaults as optimal. They're sensible, not magic. Tune learning rate and batch size for your job."
+        ],
+        exercise: `Look at the Axolotl GitHub readme. Find an example YAML for LoRA fine-tuning. Read every key. By the end, you should be able to describe what each one controls in one sentence.`
+      },
+      {
+        id: "peft",
+        title: "PEFT",
+        lesson: `<p><b>PEFT</b> (Parameter-Efficient Fine-Tuning) is a Hugging Face library that implements LoRA, QLoRA, IA3, prefix tuning, AdaLoRA, DoRA, and more. It is the underlying engine many higher-level frameworks (Axolotl, Unsloth, TRL) sit on top of.</p>
+<p>Two main objects:</p>
+<ul>
+<li><code>PeftConfig</code>: describes the method (LoRA rank, alpha, target modules).</li>
+<li><code>get_peft_model(base, config)</code>: wraps a base model to make it trainable with that method.</li>
+</ul>`,
+        model: `PEFT = the standard library for adapter-based fine-tuning. Most "fine-tune this model" tutorials are PEFT under the hood.`,
+        mistakes: [
+          "Targeting the wrong modules in LoRA config. Always check the model's named modules first.",
+          "Forgetting to save the adapter separately from the base model.",
+          "Mixing up <code>PeftModel.from_pretrained</code> (load adapter onto base) with regular Transformers loading."
+        ],
+        exercise: `In Python: load any small model, wrap it in a LoRA config with PEFT, run <code>print(model.print_trainable_parameters())</code>. The ratio of trainable to total is usually under 1%. That's the magic.`
+      },
+      {
+        id: "trl",
+        title: "TRL library",
+        lesson: `<p><b>TRL</b> (Transformer Reinforcement Learning) is Hugging Face's library for fine-tuning with preferences and RL. It is where SFTTrainer, DPOTrainer, KTOTrainer, PPOTrainer, RewardTrainer all live.</p>
+<p>If you want to do anything beyond plain supervised fine-tuning (DPO, RLHF, reward modelling, KTO), you almost certainly go through TRL.</p>
+<p>It plays nicely with PEFT, Accelerate, and FSDP for scaling.</p>`,
+        model: `TRL = the "preferences and RL" toolkit. Sister library to PEFT in the HF training universe.`,
+        mistakes: [
+          "Treating DPOTrainer as a pure replacement for SFTTrainer. You usually SFT first, then DPO.",
+          "Not setting <code>max_length</code> properly. Default truncation can chop your prompts.",
+          "Skipping eval datasets. TRL trainers support them; use them."
+        ],
+        exercise: `Find the TRL docs. Read the "SFTTrainer Quickstart" example. Note how few lines fine-tune a model end-to-end. Run it mentally line by line: load model, load data, build trainer, train.`
+      }
+    ]
+  },
+  {
+    section: "RAG & Memory",
+    topics: [
+      {
+        id: "rag",
+        title: "RAG",
+        lesson: `<p><b>RAG</b> = Retrieval-Augmented Generation. The pattern: when a question comes in, search a knowledge base for relevant text, paste it into the prompt, then let the LLM answer using that context.</p>
+<p>Why: LLMs don't know your private docs and they hallucinate on niche facts. RAG injects fresh, authoritative text at query time. You don't retrain the model; you change what it sees in the moment.</p>
+<p>Pipeline:</p>
+<ol>
+<li><b>Ingest</b>: split docs into chunks, embed them, store in a vector DB.</li>
+<li><b>Retrieve</b>: embed the question, find nearest chunks, optionally rerank.</li>
+<li><b>Generate</b>: stuff the chunks into the prompt and ask the LLM.</li>
+</ol>`,
+        model: `RAG = open-book exam. The LLM is smart but cluess on your stuff; you give it the right page right before it answers.`,
+        mistakes: [
+          "Treating RAG as a single thing. Each step (chunking, embedding, retrieval, reranking, prompting) is independently tunable and breakable.",
+          "Believing 'more context is better.' Past a point, irrelevant chunks distract the model.",
+          "Not evaluating retrieval separately from generation. If retrieval is wrong, no amount of prompt tweaking saves you."
+        ],
+        exercise: `Build a 100-line toy RAG: index 10 markdown files using OpenAI embeddings + a local list, retrieve top-3 chunks for a question, prompt GPT/Claude with them. You'll learn more in an hour than reading 10 articles.`
+      },
+      {
+        id: "vector-dbs",
+        title: "Vector databases",
+        lesson: `<p>A <b>vector database</b> stores embeddings and finds the nearest ones to a query embedding, fast. The core operation is approximate nearest neighbour (ANN) search using indexes like HNSW or IVF.</p>
+<p>Popular options:</p>
+<ul>
+<li><b>FAISS</b>: library, runs in-memory, no server. Perfect for prototypes.</li>
+<li><b>Chroma</b>: lightweight, file-backed, popular for local dev.</li>
+<li><b>Qdrant, Weaviate, Milvus</b>: standalone servers, production-ready.</li>
+<li><b>pgvector</b>: Postgres extension. If you already have Postgres, this is often the right answer.</li>
+<li><b>Pinecone</b>: managed cloud service.</li>
+</ul>`,
+        model: `Vector DB = a Google for meaning. Index meanings; query by meaning; get back the closest matches.`,
+        mistakes: [
+          "Adopting a 'real' vector DB before you need one. pgvector or even a numpy array covers small projects.",
+          "Ignoring metadata filters. Pure semantic search is rarely enough; combine with structured filters (date, author, tag).",
+          "Forgetting to re-embed when you change embedding models. Embeddings from different models are not comparable."
+        ],
+        exercise: `Pick one: pgvector if you know SQL, Chroma if you just want it working. Spin up locally, insert 100 embeddings, run a nearest-neighbour query. Done.`
+      },
+      {
+        id: "chunking",
+        title: "Chunking",
+        lesson: `<p><b>Chunking</b> is the art of splitting documents into pieces small enough to embed and retrieve, but large enough to carry meaning.</p>
+<p>Common strategies:</p>
+<ul>
+<li><b>Fixed-size</b>: every 500 tokens, with overlap. Simple, dumb, often fine.</li>
+<li><b>Recursive character splitting</b>: split on paragraphs, then sentences, then words. The standard.</li>
+<li><b>Semantic chunking</b>: split where the meaning shifts (using embeddings of consecutive sentences).</li>
+<li><b>Structural</b>: split on headings (markdown, HTML).</li>
+</ul>
+<p>Rule of thumb: 200-800 tokens per chunk, 10-20% overlap. Tune with eval.</p>`,
+        model: `Chunking = cutting a long book into index cards. Cards too small lose context, cards too big bury the answer.`,
+        mistakes: [
+          "Splitting mid-sentence. Always respect natural boundaries.",
+          "Choosing chunk size by intuition only. Evaluate retrieval recall at different sizes.",
+          "Ignoring document structure. A PDF with headings should chunk along the headings."
+        ],
+        exercise: `Take a long markdown doc. Chunk it three ways: 200 tokens flat, 500 tokens flat, by markdown heading. Eyeball the chunks. Which set would you rather retrieve from for an FAQ-style question?`
+      },
+      {
+        id: "retrieval-pipelines",
+        title: "Retrieval pipelines",
+        lesson: `<p>A real retrieval pipeline is more than "embed query, get top-k." Common stages:</p>
+<ol>
+<li><b>Query rewriting</b>: expand vague queries, decompose multi-part questions.</li>
+<li><b>Hybrid search</b>: combine semantic (embeddings) with keyword (BM25). Each catches what the other misses.</li>
+<li><b>Top-K retrieval</b>: pull, say, 50 candidate chunks.</li>
+<li><b>Reranking</b>: a small cross-encoder model rescores those 50 and keeps the top 5-10.</li>
+<li><b>Context construction</b>: deduplicate, order, format for the LLM.</li>
+</ol>
+<p>Each stage adds latency but boosts quality. Tune the slider for your product.</p>`,
+        model: `Retrieval pipeline = a librarian's workflow. Understand the question, search shelves multiple ways, pull a stack, prune to the best, hand to the reader.`,
+        mistakes: [
+          "Skipping reranking. It is often the highest-ROI single improvement after basic RAG.",
+          "Tuning end-to-end metrics only. You also need per-stage metrics (recall@k for retrieval, precision after rerank).",
+          "Letting query rewriting hallucinate. Constrain it tightly."
+        ],
+        exercise: `Add a reranker (e.g. Cohere Rerank, BGE reranker) to your toy RAG. Measure: top-1 accuracy before vs after. Usually a clear win.`
+      },
+      {
+        id: "ai-memory",
+        title: "AI memory systems",
+        lesson: `<p>"Memory" in an AI app means persistent state about the user or conversation that survives across requests. The LLM itself is stateless; memory is your job.</p>
+<p>Common patterns:</p>
+<ul>
+<li><b>Conversation buffer</b>: full chat history, capped to N turns.</li>
+<li><b>Summary memory</b>: an LLM rolls older turns into a running summary.</li>
+<li><b>Entity memory</b>: structured facts about people/things, stored as JSON.</li>
+<li><b>Retrieval memory</b>: store conversation events as documents and RAG over them.</li>
+<li><b>Per-user files</b>: long-lived markdown notes the LLM can read and edit (like your own memory system).</li>
+</ul>`,
+        model: `AI memory = the notebook outside the LLM that gets handed in at the start of every new conversation.`,
+        mistakes: [
+          "Stuffing every past message into the prompt. Costs scale, latency grows, quality often drops.",
+          "Letting the model write to memory without constraints. It will write hallucinations into permanent state.",
+          "Mixing short-term and long-term memory in one bucket. They need different rules."
+        ],
+        exercise: `Design a memory system for a fitness coach AI. What is short-term (this session), what is long-term (across months)? Where does each live? Sketch it on paper before writing code.`
+      },
+      {
+        id: "semantic-search",
+        title: "Semantic search",
+        lesson: `<p><b>Semantic search</b> means searching by meaning instead of by exact words. Query "tips to sleep better" matches a doc titled "How to improve insomnia" even though no words overlap.</p>
+<p>It is the building block of RAG, recommendation systems, deduplication, clustering, and classification.</p>
+<p>Implementation: embed all docs, embed the query, return the docs with highest cosine similarity. Add reranking, hybrid search, and metadata filters for production.</p>`,
+        model: `Semantic search = "find me documents that mean the same thing," not "find me documents that say the same thing."`,
+        mistakes: [
+          "Replacing keyword search entirely. Hybrid is almost always better than either alone.",
+          "Using English-only embeddings on multilingual data.",
+          "Forgetting that semantic search returns 'similar', not 'correct'. Always rerank or verify for high-stakes tasks."
+        ],
+        exercise: `Index 50 product descriptions with embeddings. Search "warm winter jacket" and look at top-5. Then search for "warm winter jacket -leather" (no leather). Does it handle the negation? Probably not perfectly. That's the limit of pure semantic search.`
+      }
+    ]
+  },
+  {
+    section: "Agents & Workflows",
+    topics: [
+      {
+        id: "prompt-engineering",
+        title: "Prompt engineering",
+        lesson: `<p><b>Prompt engineering</b> is the practice of writing instructions to an LLM so it reliably does what you want.</p>
+<p>High-leverage techniques:</p>
+<ul>
+<li><b>Be specific</b>: "Summarise in 3 bullets, max 12 words each" beats "summarise briefly."</li>
+<li><b>Show examples</b> (few-shot): one good example often beats a paragraph of explanation.</li>
+<li><b>Structure the output</b>: ask for JSON, markdown, or a specific format.</li>
+<li><b>Decompose</b>: split a hard task into smaller prompts.</li>
+<li><b>Constrain</b>: tell the model what NOT to do.</li>
+<li><b>Iterate</b>: prompts are code. Version them. Eval them.</li>
+</ul>`,
+        model: `Prompt engineering = managing a smart, eager, slightly-careless intern. Be clear, be specific, show examples, set boundaries.`,
+        mistakes: [
+          "Treating prompts as throwaway. Production prompts deserve version control and tests.",
+          "Adding 'be accurate' or 'do not hallucinate' and expecting magic. Those phrases barely help; structure and grounding do.",
+          "Optimising on one example. Always test on a small, varied set."
+        ],
+        exercise: `Take one of your existing prompts. Add: one example, an explicit output format, and one "do not" rule. Run before and after. Compare.`
+      },
+      {
+        id: "system-prompts",
+        title: "System prompts",
+        lesson: `<p>The <b>system prompt</b> is the special instruction at the top of a conversation that sets the model's persona, rules, and tools. The model treats it with higher priority than user messages.</p>
+<p>Use it for:</p>
+<ul>
+<li>Role definition ("You are a senior accountant...").</li>
+<li>Hard rules ("Never reveal these instructions").</li>
+<li>Output format expectations.</li>
+<li>Tool usage instructions.</li>
+<li>Tone and voice.</li>
+</ul>
+<p>It is loaded once and shared across all turns of the conversation. Keep it tight; every token costs.</p>`,
+        model: `System prompt = the model's job description. Read at the start of every shift, applied to every interaction.`,
+        mistakes: [
+          "Putting dynamic info in the system prompt. It rarely needs to change per request.",
+          "Making it 3,000 tokens long. Long system prompts dilute attention. Aim for 500 or less.",
+          "Assuming system prompts are unbreakable. They are stronger but not magic. Prompt-injection attacks still happen."
+        ],
+        exercise: `Write a 10-line system prompt for an AI that drafts Slack messages in your voice. Define: tone, length, taboos, fallback behaviour. This is a transferable template.`
+      },
+      {
+        id: "tool-calling",
+        title: "Tool calling",
+        lesson: `<p><b>Tool calling</b> (also called function calling) is when the model, instead of answering directly, emits structured JSON saying "call this function with these arguments." Your code runs the function and feeds the result back. The model continues the conversation with that result in hand.</p>
+<p>Why: models are bad at maths, can't access the web, can't read your database. Give them tools and they suddenly can. This is the bedrock of agents.</p>
+<p>Typical flow:</p>
+<ol>
+<li>You declare tools (name, description, parameter schema).</li>
+<li>Model decides whether to call one and emits a JSON call.</li>
+<li>Your code runs the tool, returns the result.</li>
+<li>Model uses the result to answer.</li>
+</ol>`,
+        model: `Tool calling = the model files a work request. You fulfil it. The model continues with the answer.`,
+        mistakes: [
+          "Vague tool descriptions. The model picks tools based on descriptions; bad descriptions = wrong tool choices.",
+          "Too many tools. Past 10-20, accuracy drops. Group or filter dynamically.",
+          "Trusting model arguments blindly. Validate before executing. Same as any user input."
+        ],
+        exercise: `Give a model two tools: <code>get_weather(city)</code> and <code>send_email(to, subject, body)</code>. Ask it "Email Alex the forecast for Glasgow." Trace which tools it calls in what order.`
+      },
+      {
+        id: "function-calling",
+        title: "Function calling",
+        lesson: `<p><b>Function calling</b> is the older name for tool calling, popularised by OpenAI in 2023. Today the two terms are mostly interchangeable; "tools" is the newer, broader umbrella term.</p>
+<p>The technical mechanism is identical: a JSON schema describes the function, the model produces a JSON object matching the schema, your code dispatches.</p>
+<p>Subtle difference in practice: "function calling" often implies one call at a time; "tool calling" frameworks usually support multiple parallel tool calls per turn.</p>`,
+        model: `Function calling = tool calling, vintage 2023. Same thing, slightly older vocabulary.`,
+        mistakes: [
+          "Treating function calling as a separate skill from tool calling. It isn't.",
+          "Designing functions with too many parameters. Models do better with focused, narrow signatures.",
+          "Returning huge unstructured text from a function. Return structured data the model can parse."
+        ],
+        exercise: `Define a function schema for "create_calendar_event" with required fields and good descriptions. The act of writing a clean schema is half the battle.`
+      },
+      {
+        id: "ai-agents",
+        title: "AI agents",
+        lesson: `<p>An <b>agent</b> is an LLM in a loop that can take actions in the world via tools, observe results, and decide what to do next, until a goal is reached.</p>
+<p>Minimum components:</p>
+<ul>
+<li><b>An LLM</b> deciding the next action.</li>
+<li><b>Tools</b> the agent can call (search, code execution, file edit, API call).</li>
+<li><b>A loop</b> that runs: think, act, observe, repeat.</li>
+<li><b>A stopping condition</b>: goal achieved, max steps, or human intervention.</li>
+</ul>
+<p>Claude Code, Cursor, and Devin are agents in this sense. So is a 100-line Python script that wraps an LLM with a "run shell" tool.</p>`,
+        model: `Agent = LLM + tools + a while loop + permission to act. The "thinking" is just an LLM choosing the next tool call.`,
+        mistakes: [
+          "Building agents for tasks a single prompt would solve. Loops add cost and unpredictability.",
+          "No step limit. Agents can spiral. Hard cap iterations and budget.",
+          "Letting agents run irreversible actions without confirmation. Reversibility = blast radius."
+        ],
+        exercise: `Sketch a 5-step agent loop for "research a topic and write a 1-page brief." What tools does it need? What is the stopping condition? Try to keep it under 4 tools.`
+      },
+      {
+        id: "agentic-workflows",
+        title: "Agentic workflows",
+        lesson: `<p><b>Agentic workflows</b> is the broader pattern: chains of LLM calls, sometimes with tools, sometimes branching, sometimes looping. Not every workflow is an "agent" in the full sense; many are deterministic pipelines.</p>
+<p>Common patterns (from Anthropic's "Building effective agents"):</p>
+<ul>
+<li><b>Prompt chaining</b>: A → B → C in fixed order.</li>
+<li><b>Routing</b>: classifier sends the input to one of several handlers.</li>
+<li><b>Parallelisation</b>: multiple LLMs work in parallel and a final one aggregates.</li>
+<li><b>Orchestrator-worker</b>: one LLM plans, others execute subtasks.</li>
+<li><b>Evaluator-optimiser</b>: one LLM generates, another critiques, loop until good.</li>
+<li><b>Autonomous agent</b>: full open-ended loop with tools.</li>
+</ul>`,
+        model: `Agentic workflow ladder: simple chain → routing → parallel → orchestrator → autonomous. Pick the lowest rung that gets the job done.`,
+        mistakes: [
+          "Jumping straight to autonomous agents. Most production wins come from boring chains and routing.",
+          "Over-engineering. If a single prompt with tools works, use it.",
+          "Not measuring per-step quality. A bad early step poisons everything downstream."
+        ],
+        exercise: `Read Anthropic's "Building effective agents" post. Map each of your existing AI features to one of the patterns. Are any over- or under-engineered?`
+      },
+      {
+        id: "multi-agent",
+        title: "Multi-agent systems",
+        lesson: `<p>A <b>multi-agent system</b> has multiple LLM instances playing different roles (planner, researcher, coder, critic) and communicating to solve a task.</p>
+<p>Frameworks: AutoGen, CrewAI, LangGraph, OpenAI Swarm, Anthropic's tool-use orchestration.</p>
+<p>Honest take: multi-agent is often slower, more expensive, and only marginally better than a well-designed single agent with the right tools. Use it when roles really do need different prompts, different models, or parallelism beats serialism. Avoid it when a single agent could do the same with cleaner logic.</p>`,
+        model: `Multi-agent = a small team of LLMs. More heads, more cost, more coordination overhead, sometimes more quality.`,
+        mistakes: [
+          "Building a 5-agent system for a problem one prompt would solve.",
+          "Letting agents chat freely without structure. They will go in circles.",
+          "Ignoring cost. Each agent burns tokens; conversations between them multiply."
+        ],
+        exercise: `Take a multi-agent demo from any framework. Count total tokens consumed for one run. Now estimate cost at scale. Decide if the quality gain is worth it for your use case.`
+      },
+      {
+        id: "browser-agents",
+        title: "Browser agents",
+        lesson: `<p>A <b>browser agent</b> is an AI that drives a real web browser to complete tasks: click links, fill forms, scrape data, submit purchases.</p>
+<p>Approaches:</p>
+<ul>
+<li><b>DOM-based</b>: parse the HTML tree, give the model element IDs to click and type into.</li>
+<li><b>Vision-based</b>: send screenshots, model returns pixel coordinates or element descriptions (used in Claude's "computer use" and Anthropic's Claude in Chrome).</li>
+<li><b>Hybrid</b>: DOM for structure, vision for context.</li>
+</ul>
+<p>Real-world: think Browserbase, Stagehand, Browser-Use, Operator, Claude in Chrome. Big unlocks: tasks that require a real login, tasks behind anti-bot defences, tasks with no public API.</p>`,
+        model: `Browser agent = a robot intern with a mouse and keyboard, doing computer tasks for you while you watch (or don't).`,
+        mistakes: [
+          "Underestimating brittleness. UIs change; agents break.",
+          "Giving agents access to your real accounts without sandboxing. Sessions can be hijacked, prompt injections can drain things.",
+          "Skipping observability. You need full action logs and replay, not just final outputs."
+        ],
+        exercise: `Try one browser-agent demo (Browser Use is open source). Watch it solve one task you'd normally do yourself. Note the failure points. That's your map of what to defend against in production.`
+      }
+    ]
+  },
+  {
+    section: "Model Types",
+    topics: [
+      {
+        id: "vlms",
+        title: "VLMs (Vision-Language Models)",
+        lesson: `<p><b>VLM</b> = Vision-Language Model. Takes images (or video frames) plus text as input, produces text output. Examples: GPT-4o, Claude 3.5/3.7/4 Sonnet, Gemini, Llama 3.2-Vision, Qwen-VL.</p>
+<p>Mechanism: an image encoder turns the picture into a sequence of "image tokens" that get fed into the same Transformer alongside text tokens. The model then attends across both.</p>
+<p>Use cases: chart understanding, screenshot QA, document OCR-like extraction, UI navigation, accessibility (describing images), multimodal RAG.</p>`,
+        model: `VLM = an LLM with extra eyes. Sees a picture, treats it as just more tokens, talks about it.`,
+        mistakes: [
+          "Sending huge images. They get downsampled; tiny details vanish. Crop and zoom first.",
+          "Assuming VLMs do precise pixel-level tasks well. Counting, OCR on small text, fine spatial reasoning are weak spots.",
+          "Forgetting input-token cost: an image is often 1k-3k tokens."
+        ],
+        exercise: `Take a screenshot of a dashboard. Ask a VLM "what is the highest value on the chart and what date?" Note where it gets confused. That's your edge case map.`
+      },
+      {
+        id: "slms",
+        title: "SLMs (Small Language Models)",
+        lesson: `<p><b>SLM</b> = Small Language Model. Loosely, anything from 1B to 8B parameters. Run on phones, laptops, edge devices, or cheaply at scale.</p>
+<p>The bet: for a narrow task with good fine-tuning, a 3B model can match a 70B at a fraction of the cost. Phi, Gemma, Llama 3.2, Qwen 2.5, SmolLM are the popular families.</p>
+<p>Best uses:</p>
+<ul>
+<li>On-device assistants (privacy, offline).</li>
+<li>Routing layer (classify intent, then call a bigger model).</li>
+<li>High-volume cheap tasks (tagging, extraction, simple summarisation).</li>
+<li>Edge inference where latency and bandwidth matter.</li>
+</ul>`,
+        model: `SLM = specialist. Knows less in general, can be sharpened to be excellent at one thing, fits anywhere.`,
+        mistakes: [
+          "Throwing an SLM at open-ended reasoning. It'll struggle. Use big models for hard reasoning, SLMs for narrow execution.",
+          "Comparing SLM vs LLM head-to-head without fine-tuning the SLM. Unfair fight.",
+          "Ignoring the cost angle. At 10k queries/day, the SLM savings dominate any quality difference for routine tasks."
+        ],
+        exercise: `Find a task you do with GPT-4 or Claude that is repetitive and narrow. Estimate cost per month. Now plan how a fine-tuned 3B model could replace it. The maths is usually compelling.`
+      },
+      {
+        id: "dense-models",
+        title: "Dense models",
+        lesson: `<p>A <b>dense model</b> activates every parameter for every token. Most classic LLMs (Llama 3.1 70B, Mistral 7B, the original GPT-3) are dense. Simple, easy to reason about, predictable cost.</p>
+<p>Trade-off: doubling parameters roughly doubles compute and memory. That makes scaling expensive past a point.</p>`,
+        model: `Dense model = every neuron fires on every token. Maximum participation, maximum cost.`,
+        mistakes: [
+          "Assuming 'dense' is the default term you need to use. Mostly it is only used to contrast with MoE.",
+          "Equating 'dense parameters' with 'MoE parameters'. A 70B dense ≠ 70B MoE in compute use.",
+          "Picking dense in 2026 by reflex when MoE alternatives might be better for the same VRAM."
+        ],
+        exercise: `List 3 popular dense models and 3 popular MoE models on Hugging Face. Compare their total params vs active params. The gap tells you the MoE efficiency.`
+      },
+      {
+        id: "moe",
+        title: "MoE models",
+        lesson: `<p><b>MoE</b> = Mixture of Experts. The model has many "expert" sub-networks; for each token, a router picks only a few (often 2 of 8) to actually run. Total parameters are huge, active parameters per token are small.</p>
+<p>Example: Mixtral 8x7B has ~47B total parameters but uses only ~13B per token. So you get the smarts of a larger model at the speed and compute cost of a smaller one.</p>
+<p>Modern examples: Mixtral, DeepSeek-V3 (671B total / 37B active), GPT-4 (rumoured), Llama 4 Scout/Maverick.</p>
+<p>Catch: you still need VRAM to hold all experts. Speed wins, memory doesn't.</p>`,
+        model: `MoE = a building full of specialists. Each question rings just two of them. The whole staff is paid (memory), but only two work per call (compute).`,
+        mistakes: [
+          "Confusing 'active params' with 'total params' when budgeting VRAM. You need memory for total, compute for active.",
+          "Assuming all experts are equally good. Some get used way more than others; routing isn't perfectly balanced.",
+          "Comparing MoE vs dense on parameter count alone. Cost-per-token is the more honest comparison."
+        ],
+        exercise: `Look up DeepSeek-V3's spec: total params, active params, expert count. Calculate active/total ratio. That ratio is your "efficiency multiplier" intuition for MoE.`
+      },
+      {
+        id: "coding-models",
+        title: "Coding models",
+        lesson: `<p><b>Coding models</b> are LLMs fine-tuned heavily on code: GitHub, StackOverflow, code instructions, code feedback, repo-level structure. Examples: Qwen2.5-Coder, DeepSeek-Coder, Codestral, CodeLlama, Codex (the modern descendant), Claude Sonnet for code.</p>
+<p>What makes them different:</p>
+<ul>
+<li>Longer context to handle whole files / repos.</li>
+<li>Fill-in-the-middle (FIM) training, not just left-to-right.</li>
+<li>Strong on languages they were trained on (often weaker on rare ones).</li>
+<li>Often paired with reasoning chains for multi-step debugging.</li>
+</ul>
+<p>Use them as the brain behind autocomplete (Cursor, Copilot), agentic coders (Claude Code, Aider), and code review bots.</p>`,
+        model: `Coding model = an LLM that grew up reading repositories. Knows syntax, idioms, error patterns, but can still hallucinate APIs.`,
+        mistakes: [
+          "Trusting generated code without running it. Hallucinated function names happen even in 2026.",
+          "Treating all coding models as equal. Each has language specialisations; check benchmarks for your stack.",
+          "Forgetting that smaller coding models (3B-7B) are great for autocomplete latency, not for whole-feature generation."
+        ],
+        exercise: `Pick a small coding task (a real one). Try it with a general LLM (Claude, GPT) and a coding model (e.g. Qwen2.5-Coder-7B). Note quality and latency differences.`
+      },
+      {
+        id: "reasoning-models",
+        title: "Reasoning models",
+        lesson: `<p><b>Reasoning models</b> (o1, o3, DeepSeek-R1, Claude with extended thinking, Gemini 2.5 Thinking) are trained to think for longer before answering. They produce long internal "chain of thought" that you usually don't see, then a final answer.</p>
+<p>They are better at: maths, multi-step problems, coding with planning, complex logic. They are worse at: latency-sensitive tasks, simple lookups (overthinking), and cost-per-query (more output tokens).</p>
+<p>Most are RL-trained on verifiable problems where the answer can be auto-checked, which lets them learn to reason without huge labelled datasets.</p>`,
+        model: `Reasoning model = a model that gets to "think out loud" privately before speaking. Trades latency for accuracy on hard problems.`,
+        mistakes: [
+          "Defaulting to reasoning models for everything. They're slow and pricey on tasks that don't need them.",
+          "Not budgeting for the extra tokens. Reasoning traces can be 10x the final answer length.",
+          "Believing reasoning = always correct. They still hallucinate; they just hallucinate with more confidence and steps."
+        ],
+        exercise: `Pose the same maths puzzle to a normal model and a reasoning model. Compare answers, time, and tokens. Decide when the reasoning model is worth it.`
+      }
+    ]
+  },
+  {
+    section: "Deployment",
+    topics: [
+      {
+        id: "local-inference",
+        title: "Local inference",
+        lesson: `<p><b>Local inference</b> = running the model on your own machine (laptop, desktop, on-prem server). No data leaves the box.</p>
+<p>Why: privacy, offline use, zero per-token cost, predictable latency, no rate limits. Why not: limited model size, you own the hardware and ops.</p>
+<p>Tooling: Ollama, LM Studio, Jan, llama.cpp, MLX, vLLM (for a local server).</p>`,
+        model: `Local inference = bring the model to the data, not the data to the model. Your laptop becomes the AI provider.`,
+        mistakes: [
+          "Picking the biggest model your hardware allows and hoping for the best. Pick the smallest that solves the task.",
+          "Ignoring thermal throttling on laptops. Long sessions can halve speeds.",
+          "Forgetting that 'local' for a team often means a shared internal server, not literally every laptop."
+        ],
+        exercise: `Run a 7B model locally with Ollama. Measure tokens/second. Now do the same task via a cloud API. Compare cost, latency, and the warm feeling of "my data stayed here."`
+      },
+      {
+        id: "on-device",
+        title: "On-device AI",
+        lesson: `<p><b>On-device AI</b> = inference on phones, watches, glasses, cars, IoT. Tiny models (often under 3B params, sometimes under 1B) optimised for battery, RAM, and chip-specific accelerators (Apple Neural Engine, Qualcomm AI Hub, Google Tensor).</p>
+<p>Big unlocks: zero-latency interactions, no data egress, works in airplane mode, no API bill. Big constraints: model quality is much lower than cloud, hardware diversity is brutal to support.</p>
+<p>Frameworks: Core ML (Apple), TensorFlow Lite / LiteRT, MLX, ExecuTorch, ONNX Runtime, MLC LLM.</p>`,
+        model: `On-device AI = AI that fits in your pocket and survives airplane mode. Smaller, narrower, but always there.`,
+        mistakes: [
+          "Targeting one device class and ignoring the others. iPhones, Androids, and laptops all behave differently.",
+          "Skipping accelerator support. Without it, you'll burn batteries and run at CPU speed.",
+          "Underestimating cold-start latency. The model has to load before it answers."
+        ],
+        exercise: `Try LM Studio or Apple's Foundation Models on a recent Mac/iPhone. Run a 1-3B model. Note the difference vs cloud quality, and where it's actually fine.`
+      },
+      {
+        id: "api-serving",
+        title: "API serving",
+        lesson: `<p><b>API serving</b> = exposing your model behind an HTTP endpoint that follows a known schema (almost always OpenAI-compatible in 2026).</p>
+<p>Why OpenAI-compatible: every client library, every observability tool, every existing integration speaks it. Use it and you get the ecosystem for free.</p>
+<p>Self-hosted stack: vLLM, TGI, TensorRT-LLM, SGLang, or llama.cpp's server. All expose OpenAI-compatible endpoints.</p>
+<p>Managed: OpenAI, Anthropic, Google, Together AI, Groq, Fireworks, Replicate, RunPod.</p>`,
+        model: `API serving = wrapping the model in a vending machine. Anyone with the right coin (auth) and slot (endpoint) gets predictable output.`,
+        mistakes: [
+          "Reinventing the API schema. Just be OpenAI-compatible.",
+          "Skipping rate limiting and quotas. One looping client can melt your GPUs.",
+          "No retries with backoff. Networks fail; design for it."
+        ],
+        exercise: `Stand up vLLM with any open model. Hit it with the OpenAI Python SDK pointed at <code>http://localhost:8000/v1</code>. Confirm: the SDK does not care if it's OpenAI or yours. That portability is the point.`
+      },
+      {
+        id: "cloud-gpus",
+        title: "Cloud GPUs",
+        lesson: `<p><b>Cloud GPUs</b> let you rent compute by the hour or by the second. Used for training, fine-tuning, and serving when you don't want to own hardware.</p>
+<p>Big providers: AWS, GCP, Azure (expensive, integrated). Specialist providers: RunPod, Lambda, CoreWeave, Vast.ai, Modal (often cheaper, sometimes spotty). New "serverless GPU" providers (Modal, Replicate, Beam) charge per-second and auto-scale.</p>
+<p>Pricing tip: on-demand A100 is roughly $2-4/hr; H100 is $3-6/hr depending on provider and commitment. Spot instances can be half that.</p>`,
+        model: `Cloud GPUs = AWS but for GPUs. You're renting the machine; you still write the code and manage the chaos.`,
+        mistakes: [
+          "Leaving instances running overnight by accident. The bill arrives.",
+          "Ignoring egress fees when moving large model weights between regions.",
+          "Picking a region by latency alone. GPU availability matters too; some regions are perpetually out of H100s."
+        ],
+        exercise: `Spin up a small GPU (e.g. RunPod's cheapest option). Pull a model. Run inference. Tear it down. Note: total elapsed time, cost, friction. That muscle memory matters when you need it.`
+      },
+      {
+        id: "edge-ai",
+        title: "Edge AI basics",
+        lesson: `<p><b>Edge AI</b> = running models close to the data source, not in the cloud. Often a fuzzy term covering: on-device AI (phones, IoT), in-store servers, vehicles, regional micro-datacentres.</p>
+<p>Why: low latency, offline operation, data sovereignty, bandwidth savings.</p>
+<p>Trade-offs: limited compute, harder model updates, fragmented hardware. Often you'll use a small model at the edge for fast first-pass, escalating hard cases to a cloud model.</p>`,
+        model: `Edge AI = AI brought to where the user/data is. Cloud thinks slowly but big; edge thinks fast but small.`,
+        mistakes: [
+          "Confusing 'edge' with 'on-device.' Edge can be a local server in a building; on-device is strictly the user's gadget.",
+          "Designing without an OTA model update path. You'll regret it within months.",
+          "Not measuring failure rates. Edge devices die, networks flap; observability is harder than cloud."
+        ],
+        exercise: `Sketch an architecture: a retail store with 100 cameras runs object detection locally and sends only summaries to the cloud. Identify: edge component, cloud component, fallback when offline. This shape recurs everywhere.`
+      }
+    ]
+  },
+  {
+    section: "Evaluation",
+    topics: [
+      {
+        id: "benchmarks",
+        title: "AI benchmarks",
+        lesson: `<p>A <b>benchmark</b> is a standardised test set used to score and compare models. Examples: MMLU (general knowledge), HumanEval (code), GSM8K (math), MT-Bench (chat), HELM, MMMU (multimodal), SWE-Bench (code agents).</p>
+<p>Use them for: rough capability comparison across models. Don't use them for: deciding what model is best for <i>your</i> product. Public benchmarks leak into training data and stop being representative fast.</p>
+<p>Always pair public benchmarks with your own private eval set built from real user data.</p>`,
+        model: `Public benchmarks = standardised exams. Useful for ranking, weak for predicting how a model handles your specific job.`,
+        mistakes: [
+          "Picking a model because it tops a leaderboard. The leaderboard rarely matches your use case.",
+          "Trusting benchmarks where the model might have seen the test set during training. It happens constantly.",
+          "Skipping eval entirely because 'this model is famous.'"
+        ],
+        exercise: `Pick three benchmarks (MMLU, HumanEval, your own future private eval). For each, list: what it measures, what it misses, why you'd or wouldn't trust it.`
+      },
+      {
+        id: "human-evals",
+        title: "Human evals",
+        lesson: `<p><b>Human evals</b> = real humans rate model outputs. The gold standard for tasks that don't have a single correct answer (style, helpfulness, creativity, safety).</p>
+<p>Formats:</p>
+<ul>
+<li><b>Likert</b>: rate output 1-5 on dimensions like helpfulness and accuracy.</li>
+<li><b>Pairwise</b>: A vs B, which is better. Easier and more reliable than absolute scores.</li>
+<li><b>Rubric</b>: detailed checklist (was the format right, did it cite sources, etc).</li>
+</ul>
+<p>Modern reality: human evals are expensive, so people often use "LLM-as-judge" (another LLM does the rating), calibrated against a small human-rated set.</p>`,
+        model: `Human eval = the only ground truth for fuzzy tasks. Slow, expensive, irreplaceable for trust.`,
+        mistakes: [
+          "Trusting LLM-as-judge without ever validating it against humans.",
+          "Single-rater evals. Always have at least two raters and check agreement.",
+          "Asking raters to score too many things at once. Split into focused dimensions."
+        ],
+        exercise: `Take 10 model outputs you have. Have a colleague rate them on one dimension. Now you rate them. Compute agreement. The gap is information about both the task and your rubric.`
+      },
+      {
+        id: "cost-per-token",
+        title: "Cost-per-token analysis",
+        lesson: `<p>LLM pricing is usually <b>$ per million tokens</b>, separately for input and output. Output tokens are typically 3-5x more expensive than input.</p>
+<p>Real cost depends on:</p>
+<ul>
+<li>Input length × volume (RAG context bloats this fast).</li>
+<li>Output length × volume.</li>
+<li>Reasoning model? Multiply output by 3-10 for hidden thinking tokens.</li>
+<li>Caching: many providers offer 50-90% discount on cached prompt prefixes.</li>
+</ul>
+<p>Practical exercise: for any feature, estimate monthly tokens at scale, multiply by price, then divide by users. That number tells you if the unit economics work.</p>`,
+        model: `Cost-per-token = the most boring, most important metric in AI engineering. The model with the best price/quality ratio for your task wins, period.`,
+        mistakes: [
+          "Quoting only input prices. Output dominates the bill for most use cases.",
+          "Forgetting caching. With prompt caching on a long system prompt, costs can drop by 80%.",
+          "Optimising the wrong thing. If 90% of tokens are in retrieval context, trim that before swapping models."
+        ],
+        exercise: `For a feature you're building: estimate input tokens, output tokens, calls per user per day, users. Multiply with current prices. Now redo with prompt caching. The delta might pay for an engineer.`
+      },
+      {
+        id: "speed-benchmarking",
+        title: "Speed benchmarking",
+        lesson: `<p>Three speed numbers matter:</p>
+<ul>
+<li><b>Time-to-first-token (TTFT)</b>: how long before the user sees anything. Dominated by prompt prefill.</li>
+<li><b>Tokens-per-second (TPS)</b>: how fast output streams. Dominated by decode.</li>
+<li><b>Total latency</b>: TTFT + (output_tokens / TPS). The full wait time.</li>
+</ul>
+<p>For chat UX, perceived speed is mostly about TTFT and streaming smoothness. For batch jobs, total latency matters more.</p>`,
+        model: `Speed = TTFT for "did it start?" + TPS for "is it flowing?" Both matter, in different products.`,
+        mistakes: [
+          "Reporting only average speed. p95 and p99 are what users actually feel under load.",
+          "Comparing speed across providers without matching context length, batch size, and output length.",
+          "Ignoring streaming vs non-streaming. They feel completely different to the user even at the same total latency."
+        ],
+        exercise: `For your favourite LLM provider, measure TTFT, TPS, and total time for a 100-token output at a 4k input. Now repeat at a 32k input. The gap in TTFT is your "long context tax."`
+      },
+      {
+        id: "quality-benchmarking",
+        title: "Quality benchmarking",
+        lesson: `<p>Building a quality eval for your own product is non-negotiable for serious work. Steps:</p>
+<ol>
+<li><b>Collect</b> 50-200 representative real queries (more is better, but start small).</li>
+<li><b>Label</b> the ideal answer or a rubric.</li>
+<li><b>Choose</b> a scoring method: exact match, F1, BLEU, LLM-as-judge, or human.</li>
+<li><b>Run</b> every candidate model/prompt against the eval, save outputs.</li>
+<li><b>Track</b> scores over time as you change prompts, models, or RAG.</li>
+</ol>
+<p>The best eval sets are versioned, in git, and re-run automatically on every prompt change. Without this, prompt engineering is vibes.</p>`,
+        model: `Quality eval = your regression test suite for the AI part of your product. Without it, you fly blind.`,
+        mistakes: [
+          "Optimising on public benchmarks instead of your own data.",
+          "Letting the eval set get stale. Refresh quarterly with new real queries.",
+          "Treating eval scores as absolute. They are useful for relative comparison across changes, not as a verdict."
+        ],
+        exercise: `Build a 20-item eval set for your highest-stakes AI feature. Score it on two models. Even this tiny exercise will change which model you choose.`
+      }
+    ]
+  },
+  {
+    section: "Real-World Skills",
+    topics: [
+      {
+        id: "chatbots",
+        title: "Building chatbots",
+        lesson: `<p>The simplest useful AI product. Architecture in five layers:</p>
+<ol>
+<li><b>Frontend</b>: chat UI, streaming, message history.</li>
+<li><b>Backend</b>: session management, auth, rate limiting.</li>
+<li><b>Prompt layer</b>: system prompt, persona, guardrails.</li>
+<li><b>LLM call</b>: model choice, retry logic, observability.</li>
+<li><b>Memory / RAG</b>: per-user context, knowledge base.</li>
+</ol>
+<p>Pitfalls: handling long histories (summarise), saving messages reliably, dealing with abuse, streaming gracefully on flaky networks, multilingual support.</p>`,
+        model: `A chatbot is the smallest interesting LLM product. Get this skeleton right and it scales into a million variants.`,
+        mistakes: [
+          "Stuffing the whole history into the prompt forever. Costs balloon, quality drops.",
+          "No persona stability. The bot drifts in style across turns.",
+          "Ignoring abuse and prompt injection. Public bots get jailbroken in hours."
+        ],
+        exercise: `Build a one-screen chatbot in ~200 lines: HTML + a serverless function + an LLM call. Add streaming. You'll understand 80% of "AI product engineering" from this one project.`
+      },
+      {
+        id: "copilots",
+        title: "Building AI copilots",
+        lesson: `<p>A <b>copilot</b> is an AI assistant embedded inside an existing tool (IDE, browser, CRM, design tool). Key difference from a chatbot: it sees the user's context (selected code, current page, current record) and acts in place.</p>
+<p>Patterns:</p>
+<ul>
+<li><b>Inline autocomplete</b>: ghost text, low latency, small model.</li>
+<li><b>Sidebar chat</b>: ask questions about what the user is looking at.</li>
+<li><b>Command palette</b>: "do X to the selected thing."</li>
+<li><b>Background tasks</b>: scan, flag, suggest while the user does other work.</li>
+</ul>
+<p>Examples to study: GitHub Copilot, Cursor, Notion AI, Linear's AI features.</p>`,
+        model: `Copilot = an AI that sees your screen, your selection, your context, and acts inside the app instead of in a separate chat.`,
+        mistakes: [
+          "Designing a copilot as a chatbot with a different colour. The interaction model needs to be different.",
+          "Showing all suggestions equally. Confidence scoring matters; rank or hide low-confidence ones.",
+          "No undo / accept-reject UX for suggestions. Trust collapses fast without it."
+        ],
+        exercise: `Pick one tool you use daily. Sketch 3 specific copilot features that would save you 10 minutes a week. Pick the most valuable one. That's your prototype brief.`
+      },
+      {
+        id: "ai-automation",
+        title: "AI automation",
+        lesson: `<p><b>AI automation</b> = wiring LLMs into existing business workflows so they run without a human pressing buttons. Often the highest-ROI category of AI work.</p>
+<p>Common patterns:</p>
+<ul>
+<li>Inbound triage (emails, tickets, leads) → classify, route, draft response.</li>
+<li>Document processing (invoices, contracts) → extract fields, validate.</li>
+<li>Internal Q&A bots → RAG over Confluence/Notion/SharePoint.</li>
+<li>Reporting → pull data, summarise, send to Slack.</li>
+</ul>
+<p>Toolchains: n8n, Make, Zapier, Pipedream, custom Python with Temporal/Inngest, or full agentic stacks.</p>`,
+        model: `AI automation = "stop doing this manually." Find the highest-volume, lowest-creativity tasks; LLM them; reclaim hours.`,
+        mistakes: [
+          "Automating things humans should still see. Bad summaries quietly poison decisions.",
+          "Skipping human-in-the-loop for high-stakes outputs. Always keep a review checkpoint until trust is earned.",
+          "Building one fragile workflow without observability. When it silently breaks, no one notices for weeks."
+        ],
+        exercise: `List 5 things you (or your team) do every week that involve reading text and writing text. Rank by hours spent. The top one is your first automation candidate.`
+      },
+      {
+        id: "saas-workflows",
+        title: "AI SaaS workflows",
+        lesson: `<p>If you build an AI SaaS, you'll repeatedly solve the same problems:</p>
+<ul>
+<li><b>Multi-tenancy</b>: per-customer data, isolation, settings, branding.</li>
+<li><b>Cost control</b>: rate limits, quotas, tiered models per plan.</li>
+<li><b>Caching</b>: same input → same output, served from cache to cut cost.</li>
+<li><b>Observability</b>: traces of every LLM call (input, output, cost, latency, user).</li>
+<li><b>Evals in CI</b>: every prompt change runs a regression suite.</li>
+<li><b>Model abstraction</b>: a router so you can swap models per task / per plan / per region.</li>
+<li><b>Privacy & compliance</b>: data residency, opt-out from training, audit logs.</li>
+</ul>`,
+        model: `AI SaaS = SaaS, plus an unpredictable expensive component you can never fully control. Build the guardrails or the unit economics will eat you.`,
+        mistakes: [
+          "Pricing flat while costs scale per token. Either meter it or set hard quotas.",
+          "Locking in to one model provider. Have a 1-day swap plan.",
+          "Skipping cost-per-customer dashboards. You can't optimise what you don't see."
+        ],
+        exercise: `For one AI feature, list every cost driver: input tokens, output tokens, embeddings, vector DB, eval runs, observability. Multiply by users. Now decide your pricing tiers. Most AI SaaS founders do this exercise too late.`
+      },
+      {
+        id: "ai-coding",
+        title: "AI coding workflows",
+        lesson: `<p>The way AI changes how you ship code:</p>
+<ul>
+<li><b>Autocomplete</b>: tiny gains everywhere, big total time saved.</li>
+<li><b>Chat-in-IDE</b>: explain code, suggest fixes, generate tests.</li>
+<li><b>Agentic coding</b> (Cursor agent, Claude Code, Aider, Devin): describe a task, the agent edits multiple files, runs tests, iterates.</li>
+<li><b>PR review bots</b>: auto-comment on diffs.</li>
+<li><b>Repo-wide Q&A</b>: RAG over your codebase.</li>
+</ul>
+<p>What changes: planning gets more important (a clear brief is the new commit message). Verification gets more important (humans read diffs more carefully). Architectural taste gets more important (the agent will happily produce technically correct ugliness).</p>`,
+        model: `AI coding = your throughput goes up; your responsibility for judgement goes up too. Quality of brief in, quality of code out.`,
+        mistakes: [
+          "Letting agents touch infra/CI without review. Blast radius is huge.",
+          "Skipping tests because the agent wrote 'good-looking' code. Always verify by running.",
+          "Using AI coding for tasks that need careful thinking before any code is written. Don't replace planning with autocomplete."
+        ],
+        exercise: `Pick a small backlog item. Solve it with Claude Code or Cursor in agent mode. Note where you intervened. The pattern of interventions is your map of where AI coding still needs you.`
+      },
+      {
+        id: "ai-orchestration",
+        title: "AI orchestration systems",
+        lesson: `<p><b>Orchestration</b> = managing the chain/graph of LLM calls, tools, retries, fallbacks, and observability that makes up a non-trivial AI app.</p>
+<p>Frameworks:</p>
+<ul>
+<li><b>LangChain / LangGraph</b>: most mature, biggest ecosystem, sometimes overkill.</li>
+<li><b>LlamaIndex</b>: RAG-first.</li>
+<li><b>DSPy</b>: programmatic prompting, auto-optimisation.</li>
+<li><b>Anthropic's tool use loop, OpenAI Agents SDK, Mastra, AI SDK by Vercel</b>: lighter weight.</li>
+<li><b>Roll your own</b>: surprisingly viable for many production apps.</li>
+</ul>
+<p>Choose by team familiarity and how much "magic" you can debug.</p>`,
+        model: `Orchestration = the glue, retries, branching, and visibility around your LLM calls. If you can't trace a single user request end-to-end, your orchestration isn't good enough.`,
+        mistakes: [
+          "Adopting a big framework before you understand the problem. Often a 200-line script is fine.",
+          "Hiding LLM calls inside abstractions you can't debug.",
+          "No tracing. When a 5-step chain fails, you'll wish you had per-step logs."
+        ],
+        exercise: `Take any 3-step LLM workflow you have. Add tracing (Langsmith, Phoenix, Helicone, or homemade JSON logs). Replay one failed run from logs. That habit changes how you ship.`
+      },
+      {
+        id: "ai-product-thinking",
+        title: "AI product thinking",
+        lesson: `<p>The most under-rated skill in AI engineering. Principles that survive every model upgrade:</p>
+<ul>
+<li><b>Start from the user's job</b>, not the model's capabilities.</li>
+<li><b>Set the trust ceiling</b> deliberately: how wrong can it be before it loses the user?</li>
+<li><b>Design for "good enough"</b>: most AI features don't need to be perfect, they need to beat the status quo (which is often nothing).</li>
+<li><b>Show your work</b>: citations, edits, undo, confidence. Trust is built by transparency, not by being right.</li>
+<li><b>Plan for failure</b>: what does the product do when the model is wrong, slow, or down?</li>
+<li><b>Pick a moat</b> that isn't the model: data, distribution, workflow integration, brand. Models commoditise; your edge shouldn't.</li>
+<li><b>Eval relentlessly</b>: gut feel doesn't scale.</li>
+</ul>`,
+        model: `AI product thinking = "what should this feel like to a human who doesn't care that it's AI?" The model is a means, not the experience.`,
+        mistakes: [
+          "Building features that demo well but die in production. Real users do not behave like demos.",
+          "Treating AI as the moat. The moat is everything around the model.",
+          "Skipping unit economics. A magical feature that loses money per call dies young."
+        ],
+        exercise: `Take your favourite AI feature in any product. Imagine the model behind it became free and infinite tomorrow. What advantages would the product still have? That answer is the actual moat. Now apply the same question to your own work.`
+      }
+    ]
+  }
+];
+
+/* ------------------------------------------------------------------
+   STATE
+   ------------------------------------------------------------------ */
+const STORAGE_KEY = "llm-course-state-v1";
+let STATE = loadState();
+
+function defaultState() {
+  return { completed: {}, currentId: COURSE[0].topics[0].id, search: "" };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return Object.assign(defaultState(), parsed);
+  } catch (e) {
+    return defaultState();
+  }
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
+}
+
+/* Helpers to flatten and find topics */
+const ALL_TOPICS = COURSE.flatMap(s => s.topics.map(t => ({ ...t, section: s.section })));
+function topicById(id) { return ALL_TOPICS.find(t => t.id === id); }
+function nextTopic(id) {
+  const idx = ALL_TOPICS.findIndex(t => t.id === id);
+  return idx < ALL_TOPICS.length - 1 ? ALL_TOPICS[idx + 1] : null;
+}
+function prevTopic(id) {
+  const idx = ALL_TOPICS.findIndex(t => t.id === id);
+  return idx > 0 ? ALL_TOPICS[idx - 1] : null;
+}
+
+/* ------------------------------------------------------------------
+   RENDER
+   ------------------------------------------------------------------ */
+function renderNav() {
+  const nav = document.getElementById("nav");
+  const q = (STATE.search || "").trim().toLowerCase();
+  nav.innerHTML = "";
+  COURSE.forEach(section => {
+    const filtered = section.topics.filter(t => !q || t.title.toLowerCase().includes(q) || (t.section || "").toLowerCase().includes(q));
+    if (!filtered.length) return;
+    const h = document.createElement("div");
+    h.className = "section-title";
+    h.textContent = section.section;
+    nav.appendChild(h);
+    filtered.forEach(t => {
+      const el = document.createElement("div");
+      el.className = "topic" + (STATE.completed[t.id] ? " done" : "") + (STATE.currentId === t.id ? " active" : "");
+      el.innerHTML = `<span class="check"></span><span class="label">${t.title}</span>`;
+      el.addEventListener("click", () => {
+        STATE.currentId = t.id;
+        saveState();
+        renderAll();
+        window.scrollTo({ top: 0, behavior: "instant" });
+      });
+      nav.appendChild(el);
+    });
+  });
+}
+
+function renderProgress() {
+  const total = ALL_TOPICS.length;
+  const done = Object.values(STATE.completed).filter(Boolean).length;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById("progressLabel").textContent = `${done} / ${total}`;
+  document.getElementById("progressPct").textContent = `${pct}%`;
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+
+function renderContent() {
+  const t = topicById(STATE.currentId) || ALL_TOPICS[0];
+  const isDone = !!STATE.completed[t.id];
+  const sectionName = t.section || "";
+  const idx = ALL_TOPICS.findIndex(x => x.id === t.id);
+  const html = `
+    <div class="crumbs"><span class="pill">${sectionName}</span> &nbsp; Topic ${idx + 1} of ${ALL_TOPICS.length}</div>
+    <h2 class="topic-title">${t.title}</h2>
+    <div class="meta">${isDone ? "Marked complete" : "Not yet completed"}</div>
+
+    <div class="card lesson">
+      <h3>Lesson</h3>
+      ${t.lesson}
+    </div>
+
+    <div class="card model">
+      <h3>Mental model</h3>
+      <p>${t.model}</p>
+    </div>
+
+    <div class="card mistakes">
+      <h3>Common beginner mistakes</h3>
+      <ul>${t.mistakes.map(m => `<li>${m}</li>`).join("")}</ul>
+    </div>
+
+    <div class="card exercise">
+      <h3>Exercise</h3>
+      <p>${t.exercise}</p>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn" ${prevTopic(t.id) ? "" : "disabled"}>← Previous</button>
+      <button class="complete-btn ${isDone ? "done" : ""}" id="completeBtn">${isDone ? "✓ Completed (click to undo)" : "Mark as complete"}</button>
+      <button class="nav-btn" id="nextBtn" ${nextTopic(t.id) ? "" : "disabled"}>Next →</button>
+    </div>
+    <div class="hint">Tip: use <span class="kbd">←</span> and <span class="kbd">→</span> to navigate, <span class="kbd">c</span> to toggle complete.</div>
+    <div class="tagline">made by James, stealing Dave's idea, which he stole from Linkedin in the first place</div>
+  `;
+  document.getElementById("content").innerHTML = html;
+
+  document.getElementById("prevBtn").addEventListener("click", () => goPrev());
+  document.getElementById("nextBtn").addEventListener("click", () => goNext());
+  document.getElementById("completeBtn").addEventListener("click", () => toggleComplete());
+}
+
+function renderAll() {
+  renderNav();
+  renderProgress();
+  renderContent();
+}
+
+/* ------------------------------------------------------------------
+   ACTIONS
+   ------------------------------------------------------------------ */
+function toggleComplete() {
+  STATE.completed[STATE.currentId] = !STATE.completed[STATE.currentId];
+  saveState();
+  renderAll();
+}
+function goNext() {
+  const n = nextTopic(STATE.currentId);
+  if (n) { STATE.currentId = n.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
+}
+function goPrev() {
+  const p = prevTopic(STATE.currentId);
+  if (p) { STATE.currentId = p.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
+}
+
+/* Reset / Export / Import */
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset all progress? This cannot be undone.")) {
+    STATE = defaultState();
+    saveState();
+    renderAll();
+  }
+});
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(STATE, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "llm-course-progress.json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById("importBtn").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        STATE = Object.assign(defaultState(), parsed);
+        saveState();
+        renderAll();
+      } catch (err) {
+        alert("Invalid file.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
+document.getElementById("search").addEventListener("input", (e) => {
+  STATE.search = e.target.value;
+  saveState();
+  renderNav();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") goNext();
+  else if (e.key === "ArrowLeft") goPrev();
+  else if (e.key.toLowerCase() === "c") toggleComplete();
+});
+
+/* Init */
+document.getElementById("search").value = STATE.search || "";
+renderAll();
+</script>
+</body>
+</html>
