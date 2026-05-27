@@ -139,12 +139,85 @@
   .progress-fill { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
   .sidebar { top: 0; }
 
+  /* ── Gamification: topbar stats, sidebar section badges ─────── */
+  .topbar-stats { margin-left: auto; display: flex; align-items: center; gap: 18px; font-family: "Poppins", sans-serif; }
+  .topbar-stat { display: inline-flex; align-items: center; gap: 6px; color: #FFFFFF; font-size: 13px; font-weight: 500; }
+  .topbar-stat .stat-icon { font-size: 15px; line-height: 1; }
+  .topbar-stat.streak.cold { color: rgba(255,255,255,0.42); }
+  .topbar-stat.streak.cold .stat-icon { filter: grayscale(1) opacity(0.6); }
+  .topbar-stat.xp .stat-icon { color: var(--accent); }
+
+  .section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 14px; }
+  .section-title .sec-name { flex: 1; }
+  .section-title .sec-prog { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; }
+  .sec-prog-count { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; font-weight: 600; }
+  .sec-badge {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid var(--line); background: transparent;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9.5px; font-weight: 700; color: var(--muted);
+    transition: all 220ms ease;
+  }
+  .sec-badge.earned {
+    background: var(--navy); border-color: var(--accent); color: #FFFFFF;
+    box-shadow: 0 0 0 2px rgba(0,145,255,0.22);
+  }
+
+  /* Celebration overlay */
+  .celebration { position: fixed; inset: 0; background: rgba(2, 18, 55, 0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 24px; animation: cel-fade 240ms ease; }
+  .celebration.hidden { display: none; }
+  @keyframes cel-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes cel-pop { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+  .celebration-card {
+    position: relative; background: var(--navy); color: #FFFFFF;
+    border-radius: 18px; padding: 52px 44px 36px;
+    max-width: 520px; width: 100%; overflow: hidden; text-align: center;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    animation: cel-pop 380ms cubic-bezier(.2,.9,.3,1.2);
+    font-family: "Poppins", sans-serif;
+    border: 1px solid rgba(0,145,255,0.25);
+  }
+  .celebration-card .cel-beam, .celebration-card .cel-edge { position: absolute; left: -10%; right: -10%; pointer-events: none; }
+  .celebration-card .cel-beam {
+    top: 38%; height: 42%; transform: rotate(-18deg);
+    background: linear-gradient(180deg,
+      rgba(0,145,255,0) 0%, rgba(0,145,255,0.28) 35%,
+      rgba(0,145,255,0.65) 50%, rgba(0,145,255,0.28) 65%,
+      rgba(0,145,255,0) 100%);
+  }
+  .celebration-card .cel-edge {
+    top: 50%; height: 2px; transform: rotate(-18deg);
+    background: linear-gradient(90deg,
+      rgba(180,220,255,0) 0%, rgba(220,235,255,0.95) 18%,
+      rgba(255,255,255,1) 50%, rgba(220,235,255,0.95) 82%,
+      rgba(180,220,255,0) 100%);
+    box-shadow: 0 0 24px rgba(120,200,255,0.65);
+  }
+  .celebration-content { position: relative; z-index: 1; }
+  .cel-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); font-weight: 600; margin-bottom: 16px; }
+  .cel-badge {
+    width: 92px; height: 92px; margin: 0 auto 22px;
+    border-radius: 50%; background: rgba(0,145,255,0.15);
+    border: 3px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; font-weight: 700; color: #FFFFFF;
+    box-shadow: 0 0 0 6px rgba(0,145,255,0.16), 0 0 40px rgba(0,145,255,0.45);
+  }
+  .cel-name { font-size: 26px; font-weight: 700; margin: 0 0 8px 0; color: #FFFFFF; letter-spacing: -0.01em; }
+  .cel-blurb { font-size: 14px; color: rgba(255,255,255,0.78); margin: 0 auto 20px; line-height: 1.5; max-width: 380px; }
+  .cel-rewards { display: inline-block; font-size: 12px; color: var(--accent); border: 1px solid rgba(0,145,255,0.45); border-radius: 99px; padding: 4px 14px; margin-bottom: 24px; font-weight: 600; letter-spacing: 0.4px; }
+  .cel-btn { background: var(--accent); color: #021237; border: 0; padding: 11px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .cel-btn:hover { filter: brightness(1.08); }
+
   @media (max-width: 880px) {
     .app { grid-template-columns: 1fr; }
     .sidebar { height: auto; position: relative; }
     .content { padding: 24px 18px 60px 18px; }
     .topbar { padding: 18px 22px; }
     .topbar h1 { font-size: 19px; }
+    .topbar-stats { width: 100%; justify-content: flex-start; margin-left: 0; }
+    .celebration-card { padding: 40px 26px 28px; }
+    .cel-name { font-size: 22px; }
   }
 </style>
 </head>
@@ -153,6 +226,14 @@
   <div class="topbar-inner">
     <h1>How AI Works</h1>
     <p class="topbar-sub">From tokens to agents</p>
+    <div class="topbar-stats">
+      <span class="topbar-stat streak cold" id="streakStat" title="No active streak">
+        <span class="stat-icon">&#128293;</span><span id="streakVal">0</span>
+      </span>
+      <span class="topbar-stat xp" id="xpStat" title="Experience points">
+        <span class="stat-icon">&#9733;</span><span id="xpVal">0</span>&nbsp;XP
+      </span>
+    </div>
   </div>
 </header>
 <div class="app">
@@ -175,6 +256,21 @@
     <nav id="nav"></nav>
   </aside>
   <main class="content" id="content"></main>
+</div>
+
+<div id="celebration" class="celebration hidden" role="dialog" aria-modal="true" aria-labelledby="celName">
+  <div class="celebration-card">
+    <span class="cel-beam"></span>
+    <span class="cel-edge"></span>
+    <div class="celebration-content">
+      <div class="cel-label">Badge unlocked</div>
+      <div class="cel-badge" id="celBadge">1</div>
+      <h2 class="cel-name" id="celName">Section complete</h2>
+      <p class="cel-blurb" id="celBlurb">Nice work.</p>
+      <div class="cel-rewards" id="celRewards">+ 100 XP</div>
+      <button class="cel-btn" id="celBtn">Continue &rarr;</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1692,13 +1788,39 @@ ollama serve  # API server</code></pre>`,
 ];
 
 /* ------------------------------------------------------------------
+   BADGES
+   ------------------------------------------------------------------ */
+const BADGE_DEFS = {
+  "Foundations":             { icon: "1",  name: "Foundations",          blurb: "You can read the room. Tokens, embeddings, transformers, attention." },
+  "Datasets & Training":     { icon: "2",  name: "Data Wrangler",        blurb: "You know how models actually learn from data." },
+  "Fine-Tuning":             { icon: "3",  name: "Fine-Tuner",           blurb: "You can pick the right fine-tuning approach for the job. LoRA, DPO, RLHF, all of it." },
+  "Inference & Optimization":{ icon: "4",  name: "Inference Specialist", blurb: "Quantization, KV cache, batching. You can make models go faster." },
+  "Local AI Ecosystem":      { icon: "5",  name: "Local Hero",           blurb: "You can run real AI on your own laptop and know which tool fits where." },
+  "RAG & Memory":            { icon: "6",  name: "Retrieval Specialist", blurb: "You can wire a model up to real, current, private data." },
+  "Agents & Workflows":      { icon: "7",  name: "Agent Builder",        blurb: "Tool use, multi-agent, workflows. You get how AI systems compose." },
+  "Model Types":             { icon: "8",  name: "Model Spotter",        blurb: "Dense, MoE, VLM, SLM. You can match the model to the problem." },
+  "Deployment":              { icon: "9",  name: "Shipping Engineer",    blurb: "From dev box to cloud to edge. You know the trade-offs." },
+  "Evaluation":              { icon: "10", name: "Evaluator",            blurb: "You can tell if an AI system is actually any good." },
+  "Real-World Skills":       { icon: "11", name: "AI Builder",           blurb: "Chatbots, copilots, orchestration. You can build the thing." },
+};
+
+/* ------------------------------------------------------------------
    STATE
    ------------------------------------------------------------------ */
 const STORAGE_KEY = "llm-course-state-v1";
 let STATE = loadState();
 
 function defaultState() {
-  return { completed: {}, currentId: COURSE[0].topics[0].id, search: "" };
+  return {
+    completed: {},
+    currentId: COURSE[0].topics[0].id,
+    search: "",
+    xp: 0,
+    streak: 0,
+    lastCompletionDate: null,
+    badges: {},
+    celebrated: {},
+  };
 }
 function loadState() {
   try {
@@ -1726,6 +1848,62 @@ function prevTopic(id) {
   return idx > 0 ? ALL_TOPICS[idx - 1] : null;
 }
 
+/* Gamification helpers */
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function daysBetween(a, b) {
+  const da = new Date(a + "T00:00:00").getTime();
+  const db = new Date(b + "T00:00:00").getTime();
+  return Math.round((db - da) / 86400000);
+}
+function sectionForTopic(topicId) {
+  for (const sec of COURSE) {
+    if (sec.topics.some(t => t.id === topicId)) return sec.section;
+  }
+  return null;
+}
+function sectionProgress(sectionName) {
+  const sec = COURSE.find(s => s.section === sectionName);
+  if (!sec) return { done: 0, total: 0 };
+  const done = sec.topics.filter(t => STATE.completed[t.id]).length;
+  return { done, total: sec.topics.length };
+}
+function currentStreakDisplay() {
+  if (!STATE.lastCompletionDate) return 0;
+  const gap = daysBetween(STATE.lastCompletionDate, todayISO());
+  if (gap > 1) return 0;
+  return STATE.streak || 0;
+}
+function bumpStreakOnCompletion() {
+  const today = todayISO();
+  const last = STATE.lastCompletionDate;
+  if (!last) {
+    STATE.streak = 1;
+  } else {
+    const gap = daysBetween(last, today);
+    if (gap === 0) {
+      /* same day, no change */
+    } else if (gap === 1) {
+      STATE.streak = (STATE.streak || 0) + 1;
+    } else {
+      STATE.streak = 1;
+    }
+  }
+  STATE.lastCompletionDate = today;
+}
+function maybeUnlockBadge(sectionName) {
+  if (STATE.badges[sectionName]) return false;
+  const { done, total } = sectionProgress(sectionName);
+  if (total > 0 && done === total) {
+    STATE.badges[sectionName] = true;
+    STATE.xp = (STATE.xp || 0) + 100;
+    return true;
+  }
+  return false;
+}
+
 /* ------------------------------------------------------------------
    RENDER
    ------------------------------------------------------------------ */
@@ -1738,7 +1916,10 @@ function renderNav() {
     if (!filtered.length) return;
     const h = document.createElement("div");
     h.className = "section-title";
-    h.textContent = section.section;
+    const { done, total } = sectionProgress(section.section);
+    const earned = !!STATE.badges[section.section];
+    const badgeDef = BADGE_DEFS[section.section] || { icon: "?", name: section.section };
+    h.innerHTML = `<span class="sec-name">${section.section}</span><span class="sec-prog"><span class="sec-prog-count">${done}/${total}</span><span class="sec-badge ${earned ? "earned" : ""}" title="${earned ? badgeDef.name + " earned" : "Complete this section to unlock"}">${badgeDef.icon}</span></span>`;
     nav.appendChild(h);
     filtered.forEach(t => {
       const el = document.createElement("div");
@@ -1762,6 +1943,16 @@ function renderProgress() {
   document.getElementById("progressLabel").textContent = `${done} / ${total}`;
   document.getElementById("progressPct").textContent = `${pct}%`;
   document.getElementById("progressFill").style.width = pct + "%";
+
+  // Topbar stats
+  const streakDisp = currentStreakDisplay();
+  const streakEl = document.getElementById("streakStat");
+  document.getElementById("streakVal").textContent = streakDisp;
+  streakEl.classList.toggle("cold", streakDisp === 0);
+  streakEl.title = streakDisp === 0
+    ? "No active streak. Complete a topic today to start one."
+    : streakDisp + "-day streak";
+  document.getElementById("xpVal").textContent = (STATE.xp || 0).toLocaleString();
 }
 
 function renderContent() {
@@ -1772,7 +1963,7 @@ function renderContent() {
   const html = `
     <div class="crumbs"><span class="pill">${sectionName}</span> &nbsp; Topic ${idx + 1} of ${ALL_TOPICS.length}</div>
     <h2 class="topic-title">${t.title}</h2>
-    <div class="meta">${isDone ? "Marked complete" : "Not yet completed"}</div>
+    <div class="meta">${isDone ? "You've got this one." : "Not done yet."}</div>
 
     <div class="card lesson">
       <h3>Lesson</h3>
@@ -1796,7 +1987,7 @@ function renderContent() {
 
     <div class="nav-row">
       <button class="nav-btn" id="prevBtn" ${prevTopic(t.id) ? "" : "disabled"}>← Previous</button>
-      <button class="complete-btn ${isDone ? "done" : ""}" id="completeBtn">${isDone ? "✓ Completed (click to undo)" : "Mark as complete"}</button>
+      <button class="complete-btn ${isDone ? "done" : ""}" id="completeBtn">${isDone ? "✓ Got it (click to undo)" : "I get this"}</button>
       <button class="nav-btn" id="nextBtn" ${nextTopic(t.id) ? "" : "disabled"}>Next →</button>
     </div>
     <div class="hint">Tip: use <span class="kbd">←</span> and <span class="kbd">→</span> to navigate, <span class="kbd">c</span> to toggle complete.</div>
@@ -1819,10 +2010,58 @@ function renderAll() {
    ACTIONS
    ------------------------------------------------------------------ */
 function toggleComplete() {
-  STATE.completed[STATE.currentId] = !STATE.completed[STATE.currentId];
+  const id = STATE.currentId;
+  const wasComplete = !!STATE.completed[id];
+  STATE.completed[id] = !wasComplete;
+
+  let celebrate = null;
+
+  if (!wasComplete) {
+    // Marking as understood
+    STATE.xp = (STATE.xp || 0) + 10;
+    bumpStreakOnCompletion();
+    const sec = sectionForTopic(id);
+    if (sec && maybeUnlockBadge(sec)) {
+      celebrate = sec;
+    }
+  } else {
+    // Undoing
+    STATE.xp = Math.max(0, (STATE.xp || 0) - 10);
+    const sec = sectionForTopic(id);
+    if (sec && STATE.badges[sec]) {
+      const { done, total } = sectionProgress(sec);
+      if (done < total) {
+        delete STATE.badges[sec];
+        delete STATE.celebrated[sec];
+        STATE.xp = Math.max(0, STATE.xp - 100);
+      }
+    }
+  }
+
   saveState();
   renderAll();
+  if (celebrate) showCelebration(celebrate);
 }
+
+/* Celebration */
+function showCelebration(sectionName) {
+  const def = BADGE_DEFS[sectionName];
+  if (!def) return;
+  document.getElementById("celBadge").textContent = def.icon;
+  document.getElementById("celName").textContent = def.name;
+  document.getElementById("celBlurb").textContent = def.blurb;
+  document.getElementById("celRewards").textContent = "+ 100 XP";
+  document.getElementById("celebration").classList.remove("hidden");
+  STATE.celebrated[sectionName] = true;
+  saveState();
+}
+function hideCelebration() {
+  document.getElementById("celebration").classList.add("hidden");
+}
+document.getElementById("celBtn").addEventListener("click", hideCelebration);
+document.getElementById("celebration").addEventListener("click", (e) => {
+  if (e.target.id === "celebration") hideCelebration();
+});
 function goNext() {
   const n = nextTopic(STATE.currentId);
   if (n) { STATE.currentId = n.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
@@ -1880,6 +2119,11 @@ document.getElementById("search").addEventListener("input", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT") return;
+  const celebrationOpen = !document.getElementById("celebration").classList.contains("hidden");
+  if (celebrationOpen) {
+    if (e.key === "Escape" || e.key === "Enter") hideCelebration();
+    return;
+  }
   if (e.key === "ArrowRight") goNext();
   else if (e.key === "ArrowLeft") goPrev();
   else if (e.key.toLowerCase() === "c") toggleComplete();
