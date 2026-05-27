@@ -2124,6 +2124,21 @@ function renderProgress() {
 }
 
 function renderHome() {
+  const doneCount = Object.values(STATE.completed).filter(Boolean).length;
+  const total = ALL_TOPICS.length;
+  let ctaLabel, ctaTarget;
+  if (doneCount === 0) {
+    ctaLabel = "Start with Foundations &rarr;";
+    ctaTarget = ALL_TOPICS[0].id;
+  } else if (doneCount >= total) {
+    ctaLabel = "Review from the start &rarr;";
+    ctaTarget = ALL_TOPICS[0].id;
+  } else {
+    ctaLabel = "Pick up where you left off &rarr;";
+    const next = ALL_TOPICS.find(t => !STATE.completed[t.id]);
+    ctaTarget = next ? next.id : ALL_TOPICS[0].id;
+  }
+
   const html = `
     <div class="home">
       <div class="home-eyebrow">
@@ -2152,7 +2167,7 @@ function renderHome() {
       </div>
 
       <div class="home-cta-wrap">
-        <button class="home-cta" id="homeStartBtn">Start with Foundations &rarr;</button>
+        <button class="home-cta" id="homeStartBtn">${ctaLabel}</button>
         <div class="home-cta-sub">Or pick any topic from the sidebar.</div>
       </div>
 
@@ -2161,7 +2176,7 @@ function renderHome() {
   `;
   document.getElementById("content").innerHTML = html;
   document.getElementById("homeStartBtn").addEventListener("click", () => {
-    STATE.currentId = ALL_TOPICS[0].id;
+    STATE.currentId = ctaTarget;
     saveState();
     renderAll();
     window.scrollTo({ top: 0, behavior: "instant" });
