@@ -223,6 +223,44 @@
   .card.why-it-matters h3 { color: var(--accent); }
   .card.why-it-matters p { font-size: 15px; line-height: 1.55; color: var(--navy); font-weight: 500; margin: 0; }
 
+  /* ── Home / landing page ─────────────────────────────────────── */
+  .home { max-width: 760px; padding: 4px 0 40px; font-family: "Poppins", sans-serif; }
+  .home-eyebrow { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .home-accent-bar { display: inline-block; width: 32px; height: 3px; background: var(--accent); border-radius: 99px; }
+  .home-eyebrow-text { font-size: 11px; text-transform: uppercase; letter-spacing: 2.2px; color: var(--accent); font-weight: 600; }
+  .home-title { font-family: "Poppins", sans-serif; font-size: 38px; font-weight: 700; color: var(--navy); margin: 0 0 16px; letter-spacing: -0.02em; line-height: 1.15; max-width: 660px; text-wrap: balance; }
+  .home-lede { font-size: 17px; line-height: 1.55; color: var(--navy); margin: 0 0 36px; max-width: 620px; }
+
+  .home-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0 0 40px; }
+  .home-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px 22px 20px; }
+  .home-card-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-bottom: 14px; }
+  .home-card h3 { font-family: "Poppins", sans-serif; font-weight: 600; font-size: 15px; color: var(--navy); margin: 0 0 8px; letter-spacing: -0.005em; }
+  .home-card p { font-size: 13.5px; line-height: 1.55; color: var(--text); margin: 0; }
+
+  .home-cta-wrap { margin: 0 0 24px; }
+  .home-cta {
+    background: var(--navy); color: #FFFFFF;
+    border: 0; padding: 14px 28px; border-radius: 10px;
+    font-family: "Poppins", sans-serif; font-weight: 600; font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(2,18,55,0.18);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  .home-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(2,18,55,0.25); }
+  .home-cta-sub { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+  /* Sidebar Home link */
+  .nav-home {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; cursor: pointer;
+    font-size: 13.5px; font-weight: 600; color: var(--navy);
+    border-left: 3px solid transparent;
+    margin-bottom: 4px;
+  }
+  .nav-home:hover { background: #E8ECF3; }
+  .nav-home.active { background: #E1EAFA; border-left-color: var(--accent); }
+  .nav-home .home-link-arrow { font-size: 14px; line-height: 1; color: var(--accent); }
+
   @media (max-width: 880px) {
     .app { grid-template-columns: 1fr; }
     .sidebar { height: auto; position: relative; }
@@ -232,6 +270,8 @@
     .topbar-stats { width: 100%; justify-content: flex-start; margin-left: 0; }
     .celebration-card { padding: 40px 26px 28px; }
     .cel-name { font-size: 22px; }
+    .home-title { font-size: 28px; }
+    .home-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1841,7 +1881,7 @@ let STATE = loadState();
 function defaultState() {
   return {
     completed: {},
-    currentId: COURSE[0].topics[0].id,
+    currentId: "__home",
     search: "",
     xp: 0,
     streak: 0,
@@ -1855,7 +1895,13 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    return Object.assign(defaultState(), parsed);
+    const merged = Object.assign(defaultState(), parsed);
+    // One-time migration: route existing users to the new home page once
+    if (typeof merged.seenHomeV1 === "undefined") {
+      merged.currentId = "__home";
+      merged.seenHomeV1 = true;
+    }
+    return merged;
   } catch (e) {
     return defaultState();
   }
@@ -1939,6 +1985,19 @@ function renderNav() {
   const nav = document.getElementById("nav");
   const q = (STATE.search || "").trim().toLowerCase();
   nav.innerHTML = "";
+
+  // Home link (always at top, regardless of search)
+  const homeEl = document.createElement("div");
+  homeEl.className = "nav-home" + (STATE.currentId === "__home" ? " active" : "");
+  homeEl.innerHTML = `<span class="home-link-arrow">&#8962;</span><span>Home</span>`;
+  homeEl.addEventListener("click", () => {
+    STATE.currentId = "__home";
+    saveState();
+    renderAll();
+    window.scrollTo({ top: 0, behavior: "instant" });
+  });
+  nav.appendChild(homeEl);
+
   COURSE.forEach(section => {
     const filtered = section.topics.filter(t => !q || t.title.toLowerCase().includes(q) || (t.section || "").toLowerCase().includes(q));
     if (!filtered.length) return;
@@ -1983,7 +2042,53 @@ function renderProgress() {
   document.getElementById("xpVal").textContent = (STATE.xp || 0).toLocaleString();
 }
 
+function renderHome() {
+  const html = `
+    <div class="home">
+      <div class="home-eyebrow">
+        <span class="home-accent-bar"></span>
+        <span class="home-eyebrow-text">Welcome</span>
+      </div>
+      <h1 class="home-title">Hi. This is a course about how AI actually works.</h1>
+      <p class="home-lede">Written for anyone who wants to get past the hype. No code, no maths. Eleven sections, from "what's a token?" to "what does an AI agent actually do?".</p>
+
+      <div class="home-grid">
+        <div class="home-card">
+          <div class="home-card-icon">1</div>
+          <h3>Short, plain topics</h3>
+          <p>Each one starts with <b>why it matters</b>, then a lesson, a mental model, and the mistakes most people make. About five minutes a topic.</p>
+        </div>
+        <div class="home-card">
+          <div class="home-card-icon">2</div>
+          <h3>Earn as you go</h3>
+          <p>Eleven section badges. A daily streak. XP. Your progress saves on this device, no login needed.</p>
+        </div>
+        <div class="home-card">
+          <div class="home-card-icon">3</div>
+          <h3>Try it for real</h3>
+          <p>Each section ends with a five-minute exercise you can do on your phone. Open ChatGPT, watch a video, look at a product you already use. No installs.</p>
+        </div>
+      </div>
+
+      <div class="home-cta-wrap">
+        <button class="home-cta" id="homeStartBtn">Start with Foundations &rarr;</button>
+        <div class="home-cta-sub">Or pick any topic from the sidebar.</div>
+      </div>
+
+      <div class="tagline">made by James, stealing Dave's idea, which he stole from Linkedin in the first place</div>
+    </div>
+  `;
+  document.getElementById("content").innerHTML = html;
+  document.getElementById("homeStartBtn").addEventListener("click", () => {
+    STATE.currentId = ALL_TOPICS[0].id;
+    saveState();
+    renderAll();
+    window.scrollTo({ top: 0, behavior: "instant" });
+  });
+}
+
 function renderContent() {
+  if (STATE.currentId === "__home") { renderHome(); return; }
   const t = topicById(STATE.currentId) || ALL_TOPICS[0];
   const isDone = !!STATE.completed[t.id];
   const sectionName = t.section || "";
@@ -2057,6 +2162,7 @@ function renderAll() {
    ------------------------------------------------------------------ */
 function toggleComplete() {
   const id = STATE.currentId;
+  if (id === "__home") return;
   const wasComplete = !!STATE.completed[id];
   STATE.completed[id] = !wasComplete;
 
