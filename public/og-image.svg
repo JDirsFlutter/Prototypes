@@ -37,8 +37,8 @@
   <rect x="80" y="160" width="80" height="6" rx="3" fill="url(#accent)"/>
 
   <!-- Title -->
-  <text x="80" y="290" font-family="Poppins, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="108" font-weight="700" fill="#FFFFFF" letter-spacing="-2.5">LLM Engineering</text>
-  <text x="80" y="410" font-family="Poppins, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="108" font-weight="700" fill="url(#accent)" letter-spacing="-2.5">in 84 lessons.</text>
+  <text x="80" y="290" font-family="Poppins, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="120" font-weight="700" fill="#FFFFFF" letter-spacing="-3">How AI</text>
+  <text x="80" y="410" font-family="Poppins, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="120" font-weight="700" fill="url(#accent)" letter-spacing="-3">Works.</text>
 
   <!-- Divider -->
   <rect x="80" y="500" width="60" height="2" rx="1" fill="#0091FF" opacity="0.5"/>
