@@ -223,6 +223,26 @@
   .card.why-it-matters h3 { color: var(--accent); }
   .card.why-it-matters p { font-size: 15px; line-height: 1.55; color: var(--navy); font-weight: 500; margin: 0; }
 
+  /* Go deeper: optional technical depth, collapsed by default */
+  .card.go-deeper { padding: 14px 22px; background: var(--panel); }
+  .go-deeper-header {
+    display: flex; align-items: center; cursor: pointer;
+    -webkit-user-select: none; user-select: none;
+  }
+  .go-deeper-header h3 { margin: 0; color: var(--navy); font-family: "Poppins", sans-serif; font-weight: 600; }
+  .go-deeper-chevron {
+    margin-left: auto; color: var(--accent);
+    font-size: 22px; line-height: 1; font-weight: 400;
+    transition: transform 220ms ease;
+    width: 20px; text-align: center;
+  }
+  .go-deeper.open .go-deeper-chevron { transform: rotate(45deg); }
+  .go-deeper-body { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .go-deeper.open .go-deeper-body { display: block; }
+  .go-deeper-body p, .go-deeper-body ul, .go-deeper-body ol { margin: 0 0 10px 0; }
+  .go-deeper-body ul, .go-deeper-body ol { padding-left: 20px; }
+  .go-deeper-body li { margin-bottom: 4px; }
+
   /* ── Home / landing page ─────────────────────────────────────── */
   .home { max-width: 760px; padding: 4px 0 40px; font-family: "Poppins", sans-serif; }
   .home-eyebrow { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 14px; }
@@ -466,9 +486,12 @@ const COURSE = [
         model: `<b>Mental model:</b> An LLM is a "next-word slot machine" that got very good at guessing. It does not "know" things. It pattern-matches based on what it saw during training.`,
         mistakes: [
           "Thinking the LLM 'understands' like a human. It does not. It predicts.",
-          "Assuming it has access to real-time information. By default, it does not.",
           "Trusting confident answers as truth. Confidence and correctness are unrelated in LLMs."
-        ]
+        ],
+        goDeeper: `<p>The thing that surprised researchers: just getting really good at "predict the next word" turned out to produce something that looks like understanding. Nobody set out to build a conversation partner. The conversation emerged from raw scale (more data, bigger model) plus the right architecture (transformers, attention).</p>
+<p>Underneath, the model isn't "choosing" a word. For every position, it produces a probability distribution across its entire vocabulary, often 50,000 to 200,000 candidate tokens. Most have a vanishingly small probability. A few are likely. One is picked: sometimes the most likely, sometimes a random pick weighted by probability. That randomness is why you get different answers each time you ask the same question.</p>
+<p>The dial that controls this is <b>temperature</b>. Low temperature (close to 0) almost always picks the most likely token, giving you predictable, safe answers. High temperature (close to 1) takes more risks, giving you creative-but-less-reliable answers. ChatGPT and Claude default to something in the middle.</p>
+<p>The philosophical edge: some researchers argue this is "just" pattern matching with no understanding (the "stochastic parrots" position). Others argue that pattern matching at this scale might be functionally indistinguishable from understanding. Worth knowing the debate exists. Nothing changes about what you should expect from the tool today either way.</p>`
       },
       {
         id: "how-ai-models-work",
@@ -489,15 +512,18 @@ const COURSE = [
         title: "Tokens",
         whyItMatters: `Tokens are the unit of everything in AI: cost, speed, memory. If you've ever hit a 'message too long' error or wondered why ChatGPT costs what it does, this is the answer.`,
         lesson: `<p>An LLM does not see words. It sees <b>tokens</b>. A token is a chunk of text, sometimes a whole word ("cat"), sometimes a piece of a word ("ing"), sometimes a single character or a space.</p>
-<p>Why? Because there are too many possible words (especially across languages, code, names, emoji). Splitting into smaller reusable pieces means a vocabulary of around 50k-200k tokens can cover almost anything.</p>
-<p>Rough rule of thumb in English: <b>1 token ≈ 4 characters ≈ ¾ of a word</b>. So 1,000 words is roughly 1,300 tokens. Code, JSON and non-English text use more tokens per word.</p>
-<p>Why you care: you pay per token. Context limits are measured in tokens. Speed is measured in tokens per second.</p>`,
-        model: `Tokens are the model's "atoms." Words are molecules built from them. The model only ever reads and writes atoms.`,
+<p>Why? Because there are too many possible words across all languages, code, names, and emoji to give each one its own slot. Splitting into smaller reusable pieces means a manageable vocabulary can cover almost anything.</p>
+<p>Tokens are the unit AI is priced and limited in. When ChatGPT costs money, it's per token. When you hit "message too long", you've hit a token limit. When someone says a model is "fast", they mean tokens per second. The whole industry's pricing and performance language is in tokens.</p>`,
+        model: `Tokens are the model's "atoms". Words are molecules built from them. The model only ever reads and writes atoms.`,
         mistakes: [
           "Counting words instead of tokens when estimating cost or context use.",
-          "Forgetting that non-English text often uses 2-3x more tokens per word.",
-          "Thinking spaces and punctuation are free. They are usually tokens too."
-        ]
+          "Forgetting that non-English text often uses 2-3x more tokens per word, which makes AI roughly 2-3x more expensive in those languages."
+        ],
+        goDeeper: `<p><b>The maths.</b> Rough rule of thumb in English: 1 token is about 4 characters, or three-quarters of a word. So 1,000 English words is roughly 1,300 tokens. A normal email is 100-200 tokens. A long article: 2,000-5,000 tokens.</p>
+<p><b>Why JSON, code, and non-English text use way more.</b> JSON like <code>{"name": "x"}</code> is brutal because every punctuation mark, bracket, and quote is its own token. Code is similar. Non-English languages often weren't well represented when the tokenizer was trained, so common words there get broken into many small pieces. A French paragraph can use 50% more tokens than the same paragraph in English.</p>
+<p><b>Pricing example.</b> GPT-4o-mini costs roughly $0.15 per 1 million input tokens and $0.60 per 1 million output tokens (2025 prices). A typical exchange (you ask 100 words, it replies 300 words) is around 1,600 tokens, which costs a fraction of a penny. The bill adds up at scale: 10,000 daily users doing 20 exchanges each is meaningful money.</p>
+<p><b>Subtle gotcha.</b> A trailing space or invisible character in your prompt can change how it tokenizes, and (rarely) change the model's output. If a prompt suddenly behaves differently for no apparent reason, check for invisible whitespace.</p>
+<p><b>Useful tool.</b> Most providers have a free tokenizer playground. OpenAI's is at <code>platform.openai.com/tokenizer</code>. Paste any text in to see exactly how it gets chopped up.</p>`
       },
       {
         id: "tokenization",
@@ -821,15 +847,19 @@ What is 2+2?&lt;|im_end|&gt;
         id: "lora",
         title: "LoRA",
         whyItMatters: `LoRA is the reason fine-tuning is cheap enough that a one-person team can do it. Before LoRA, you needed a data centre. Now you need an afternoon.`,
-        lesson: `<p><b>LoRA</b> = Low-Rank Adaptation. It is the most popular fine-tuning method because it is cheap, fast, and works well.</p>
-<p>The trick: instead of updating the full giant weight matrices, you freeze them and add two tiny matrices (A and B) whose product (A·B) is the "change." You only train A and B. They might have 0.1% of the parameters of the base model.</p>
-<p>Result: a 7B model can be fine-tuned on a single 24GB GPU in hours, not days. The trained "LoRA adapter" is a small file (often under 200MB) you can swap in and out.</p>`,
-        model: `LoRA = sticking a small tunable layer onto a frozen big model. You train the small thing, the big thing stays untouched.`,
+        lesson: `<p><b>LoRA</b> is the trick that made it possible for almost anyone (not just big AI labs) to customise a giant model on their own data. It's the difference between "fine-tuning costs hundreds of thousands of dollars" and "fine-tuning costs the price of a long lunch".</p>
+<p>The core idea is simple. Retraining a whole giant model is impossibly expensive. Instead, you take the original model, freeze it (don't touch any of its weights), and bolt a tiny <b>add-on</b> onto it. You only train the add-on. The combined system feels like a new model, but you only paid to train the small bit.</p>
+<p>The trained add-on (called a <b>LoRA adapter</b>) is a small file, often under 200MB. You can keep one base model and swap dozens of adapters in and out: one for legal tone, one for coding, one for customer support, one for your company's writing style. Every modern fine-tuning recipe (from the open-source crowd at Hugging Face to the polish in OpenAI's API) is some flavour of this.</p>`,
+        model: `LoRA = sticking a small tunable layer onto a frozen big model. You train the small thing, the big thing stays untouched, the two together behave like a customised model.`,
         mistakes: [
-          "Setting rank too high. r=8 to r=64 is usually enough. Going to r=256 burns memory for little gain.",
-          "Targeting only the attention layers. Also adapting the MLP layers often improves quality.",
-          "Forgetting to merge or load the adapter at inference time. The base model alone is unchanged."
-        ]
+          "Thinking LoRA gives you a 'new model'. It doesn't. The base model is doing 99% of the work and the adapter is steering its output. Without the base, the adapter is useless.",
+          "Reaching for fine-tuning when RAG would do. If the model doesn't know your domain at all, LoRA can't really teach it new facts cheaply. Use RAG for current/private knowledge. Use LoRA for tone, format, and behaviour."
+        ],
+        goDeeper: `<p><b>The actual technique.</b> A trained model is a stack of giant weight matrices (W). Normal fine-tuning updates every number in W. LoRA freezes W and adds two small matrices A and B, where the product A·B has the same shape as W but is built from far fewer numbers. The effective weight at inference time is W + A·B. You train A and B only.</p>
+<p><b>The "low-rank" bit.</b> A and B share a small inner dimension r (the "rank"), usually 8, 16, 32, or 64. Smaller r means fewer trainable parameters but less expressive. r=8 to r=64 is the sweet spot for most fine-tunes. Going higher rarely helps and burns memory.</p>
+<p><b>Where to apply LoRA.</b> Traditionally only on the attention layers, but adapting the MLP layers too often gives meaningfully better quality at modest extra cost. Modern frameworks (Axolotl, Unsloth, PEFT) default to adapting both.</p>
+<p><b>Numbers to anchor on.</b> Fine-tuning a 7-billion-parameter model with full weights needs 60-80GB of GPU memory (datacentre territory). The same task with LoRA on attention layers at r=16 fits in 16-24GB, runs in a few hours, and produces a ~50MB adapter file.</p>
+<p><b>Engineer gotchas.</b> Setting r too high burns memory for negligible gain. Forgetting to merge or load the adapter at inference time means you're silently still using the unchanged base model. Watching loss not budge usually means a data-formatting problem, not a LoRA problem.</p>`
       },
       {
         id: "qlora",
@@ -1481,10 +1511,19 @@ ollama serve  # API server</code></pre>`,
 <p>Claude Code, Cursor, and Devin are agents in this sense. So is a 100-line Python script that wraps an LLM with a "run shell" tool.</p>`,
         model: `Agent = LLM + tools + a while loop + permission to act. The "thinking" is just an LLM choosing the next tool call.`,
         mistakes: [
-          "Building agents for tasks a single prompt would solve. Loops add cost and unpredictability.",
-          "No step limit. Agents can spiral. Hard cap iterations and budget.",
-          "Letting agents run irreversible actions without confirmation. Reversibility = blast radius."
-        ]
+          "Letting agents run irreversible actions (sending, deleting, paying) without a human confirmation step. Reversibility = blast radius.",
+          "Confusing 'agent' with 'AGI'. An agent is just an LLM that can call tools in a loop. It still hallucinates, still gets stuck, still doesn't 'understand'. The 'agent' label hypes a normal tool into something it isn't."
+        ],
+        goDeeper: `<p><b>The architecture.</b> Strip away the marketing and an agent is four things wired together:</p>
+<ul>
+<li><b>An LLM</b> that, given the current state, outputs a next action (usually as JSON describing a tool call).</li>
+<li><b>A set of tools</b>: functions the agent can call (search the web, run code, send an email, edit a file). Each one is a normal API or function the engineer writes.</li>
+<li><b>A loop</b>: take the LLM's chosen action, execute it, feed the result back into the LLM, ask for the next action. Repeat.</li>
+<li><b>A halt condition</b>: stop when the goal is met, the iteration cap is hit, the budget is exhausted, or a human intervenes.</li>
+</ul>
+<p><b>What can go wrong.</b> Agents spiral when the LLM keeps picking the same tool, or when a tool's output confuses it. The two cheapest defences: a hard cap on iterations (say, 25), and observability so you can replay failures. Agents also get exploited via prompt injection: instructions hidden in retrieved content can tell the agent to do something it shouldn't. The defensive pattern: human-in-the-loop confirmation for any irreversible action.</p>
+<p><b>Where they shine.</b> Open-ended tasks where the steps aren't known up-front: code refactoring, research, multi-step admin work. Where they suck: tasks a single prompt would already solve. Loops add cost and unpredictability for no real benefit.</p>
+<p><b>Real-world examples.</b> Claude Code and Cursor (coding agents). Browser Use (web automation). Anthropic's Computer Use (drives a desktop). Each is roughly the same shape: LLM + tools + loop + safety rails. The "agent" label means something specific in each, but the underlying recipe is the same.</p>`
       },
       {
         id: "agentic-workflows",
@@ -1961,9 +2000,12 @@ ollama serve  # API server</code></pre>`,
         model: `AI product thinking = "what should this feel like to a human who doesn't care that it's AI?" The model is a means, not the experience.`,
         mistakes: [
           "Building features that demo well but die in production. Real users do not behave like demos.",
-          "Treating AI as the moat. The moat is everything around the model.",
-          "Skipping unit economics. A magical feature that loses money per call dies young."
-        ]
+          "Treating AI as the moat. The moat is everything around the model: data, distribution, workflow, brand."
+        ],
+        goDeeper: `<p><b>Trust ceiling, in practice.</b> Different products tolerate different error rates. A grammar checker that's wrong 5% of the time is fine; you just ignore the bad suggestions. A legal contract review that's wrong 5% of the time is a lawsuit. The design question isn't "how do we make it perfect", it's "how do we make wrongness recoverable?". Through review steps, editable suggestions, undo buttons, citation links back to source material.</p>
+<p><b>Where 'AI as the moat' falls apart.</b> When GPT-3.5 launched, dozens of startups had a thin wrapper around it. Most are dead. The survivors had something the model didn't: distribution (Notion, GitHub), proprietary data (Bloomberg), workflow integration (Microsoft 365, Linear), or a brand readers already trusted. Frontier models commoditise on roughly a 12-month cycle. Your moat needs to outlast that.</p>
+<p><b>Unit economics in practice.</b> Every AI feature has a per-call cost: input tokens times price, plus output tokens times price, plus embeddings, plus vector DB, plus observability. Multiply by your active user count and call frequency. If that number is bigger than your revenue per user, you don't have a product, you have a science experiment. The fix is usually: route cheap calls to a cheap model, cache aggressively, batch inputs, and fine-tune a small model for the highest-volume task.</p>
+<p><b>Eval discipline.</b> Most teams skip this. The ones that ship reliable AI products don't. The minimum viable eval is 20-50 hand-curated examples with expected outputs, run against every model change. Without that, you have no idea whether your last "improvement" was actually a regression.</p>`
       }
     ]
   }
@@ -2003,6 +2045,7 @@ function defaultState() {
     badges: {},
     celebrated: {},
     audioRate: 1.0,
+    goDeeperExpanded: false,
   };
 }
 function loadState() {
@@ -2248,6 +2291,16 @@ function renderContent() {
        </div>`
     : "";
 
+  const goDeeperCard = t.goDeeper
+    ? `<div class="card go-deeper ${STATE.goDeeperExpanded ? "open" : ""}" id="goDeeperCard">
+         <div class="go-deeper-header" id="goDeeperHeader" role="button" aria-expanded="${STATE.goDeeperExpanded ? "true" : "false"}" tabindex="0">
+           <h3>Go deeper</h3>
+           <span class="go-deeper-chevron" aria-hidden="true">+</span>
+         </div>
+         <div class="go-deeper-body">${t.goDeeper}</div>
+       </div>`
+    : "";
+
   const audioControls = SPEECH_AVAILABLE
     ? `<div class="audio-controls">
          <button class="audio-btn" id="audioBtn" type="button" aria-label="Play audio">
@@ -2281,6 +2334,8 @@ function renderContent() {
       <ul>${t.mistakes.map(m => `<li>${m}</li>`).join("")}</ul>
     </div>
 
+    ${goDeeperCard}
+
     ${exerciseCard}
 
     <div class="nav-row">
@@ -2296,6 +2351,21 @@ function renderContent() {
   document.getElementById("prevBtn").addEventListener("click", () => goPrev());
   document.getElementById("nextBtn").addEventListener("click", () => goNext());
   document.getElementById("completeBtn").addEventListener("click", () => toggleComplete());
+
+  const goDeeperHeader = document.getElementById("goDeeperHeader");
+  if (goDeeperHeader) {
+    const toggleGoDeeper = () => {
+      STATE.goDeeperExpanded = !STATE.goDeeperExpanded;
+      saveState();
+      const card = document.getElementById("goDeeperCard");
+      card.classList.toggle("open", STATE.goDeeperExpanded);
+      goDeeperHeader.setAttribute("aria-expanded", STATE.goDeeperExpanded ? "true" : "false");
+    };
+    goDeeperHeader.addEventListener("click", toggleGoDeeper);
+    goDeeperHeader.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleGoDeeper(); }
+    });
+  }
 
   const audioBtn = document.getElementById("audioBtn");
   if (audioBtn) {
@@ -2519,6 +2589,10 @@ function buildAudioQueueForTopic(t, isLastInSection, sectionExercise) {
   if (t.mistakes && t.mistakes.length) {
     items.push({ text: "Common beginner mistakes." });
     t.mistakes.forEach(m => items.push({ text: m }));
+  }
+  if (t.goDeeper && STATE.goDeeperExpanded) {
+    items.push({ text: "Go deeper." });
+    extractParagraphs(t.goDeeper).forEach(p => items.push({ text: p }));
   }
   if (isLastInSection && sectionExercise) {
     items.push({ text: "Try this in the real world." });
