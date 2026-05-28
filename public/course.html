@@ -502,10 +502,13 @@ const COURSE = [
 <p>Daily-life analogy: imagine a coffee machine with thousands of knobs. Training is the process of slowly turning each knob so that, when you put in "good morning," it reliably outputs "how are you?" The knobs are the weights. Once trained, the machine is frozen.</p>`,
         model: `Input → numbers → giant matrix multiplications → probabilities → next token → repeat. The "intelligence" lives in billions of frozen knob settings.`,
         mistakes: [
-          "Believing models 'think' between requests. They don't. Each request is fresh maths.",
-          "Confusing the model file with the running process. The file is static; the inference engine is what does the work.",
-          "Assuming bigger always means smarter. Architecture and data matter more than raw size past a point."
-        ]
+          "Believing models 'think' between requests. Each request starts fresh, with no memory of the last one unless the conversation history is included.",
+          "Assuming bigger always means smarter. Architecture and training data matter more than raw size past a certain point."
+        ],
+        goDeeper: `<p><b>The maths is genuinely simple.</b> A neural network is just a sequence of matrix multiplications and a small handful of non-linear functions (like "turn negative numbers to zero"). Stack enough of these together, train them on enough data, and you get something that can predict the next token reasonably well. There's no special sauce.</p>
+<p><b>What "training" actually does.</b> Start with random weights. Show the model a chunk of text from the training data. Ask it to predict the next token. Compare its guess to the actual token. Nudge every weight slightly to reduce the error. Repeat trillions of times across the entire internet. The model never explicitly sees that it was wrong; it just gets gently bullied into being slightly less wrong each step.</p>
+<p><b>Why size matters but isn't everything.</b> Bigger models (more parameters) can encode more patterns, but past about 10 billion parameters, the marginal return on size drops sharply. What matters more: data quality, training recipe, and post-training techniques like instruction tuning and RLHF. GPT-3 was 175 billion params and is now worse at most tasks than today's much smaller models trained with better methods.</p>
+<p><b>Frozen at inference.</b> Once trained, the weights don't change. Every conversation with ChatGPT uses the exact same "frozen" model. The illusion of the model learning across conversations comes from giving it your previous messages each time, not from anything actually changing inside the model.</p>`
       },
       {
         id: "tokens",
@@ -534,10 +537,13 @@ const COURSE = [
 <p>Different models use different tokenizers. The Llama tokenizer and the GPT tokenizer will split the same sentence differently. That matters when you switch models: same text, different token count, different cost.</p>`,
         model: `Tokenization is a learned shorthand. Common words get short codes, rare ones get spelled out from smaller pieces.`,
         mistakes: [
-          "Assuming all models use the same tokenizer. They don't.",
-          "Forgetting that tokenization happens before the model sees anything, so weird spacing or invisible characters can break things subtly.",
-          "Ignoring 'token boundary' bugs in prompts (e.g. trailing spaces changing model behaviour)."
-        ]
+          "Assuming all models use the same tokenizer. They don't. Same text, different model, different token count, different cost.",
+          "Forgetting that tokenization happens before the model sees anything, so weird spacing or invisible characters can change outputs in ways that look like bugs."
+        ],
+        goDeeper: `<p><b>How BPE actually works.</b> Byte Pair Encoding (the most common tokenizer algorithm) starts with every single character as its own token. Then it scans the training data, finds the most common pair of adjacent tokens (say 't' + 'h'), and merges them into a new token ('th'). Repeat tens of thousands of times. The result: common patterns get short codes, rare ones spell themselves out from smaller pieces.</p>
+<p><b>The vocabulary trade-off.</b> Bigger vocabulary (200k+ tokens) means each input uses fewer tokens, but the model has to learn embeddings for more tokens. Smaller vocabulary (32k) is cheaper to train but uses more tokens per input. Most modern models land at 50k-200k. Llama 3 uses 128k; GPT-4 uses about 100k.</p>
+<p><b>Different tokenizers, real impact.</b> The same English paragraph might be 250 tokens in GPT-4's tokenizer and 280 in Llama's. Multiplied across millions of calls, that's a real cost difference. Multilingual content amplifies this: tokenizers trained mostly on English break non-English text into way more pieces.</p>
+<p><b>Practical tool.</b> Tiktoken (Python) lets you count tokens for OpenAI models. <code>tiktoken.get_encoding('cl100k_base').encode('hello world')</code> returns the actual integer IDs. Run this on a sample of your real prompts to estimate cost before sending traffic.</p>`
       },
       {
         id: "context-windows",
@@ -548,10 +554,13 @@ const COURSE = [
 <p>Daily-life analogy: it is your desk. You can spread out only so many papers at once. Bigger desk = you can work with more documents simultaneously. But: bigger desk also means slower (more attention to compute) and more expensive.</p>`,
         model: `Context window = how much the model can "see" at this exact moment. Outside it = doesn't exist.`,
         mistakes: [
-          "Confusing context window with long-term memory. Once the request ends, the window is gone.",
-          "Assuming a 1M token window means you should fill it. Quality degrades at the edges (the 'lost in the middle' problem).",
-          "Forgetting that input tokens + output tokens both count against the window."
-        ]
+          "Confusing context window with long-term memory. Once the conversation ends, the window is gone. Nothing carries over unless you explicitly re-include it.",
+          "Assuming a 1 million token window means you should fill it. Quality degrades at the edges; the model 'forgets' things buried deep in long contexts."
+        ],
+        goDeeper: `<p><b>The numbers in 2025.</b> GPT-4o: 128k tokens. Claude Sonnet 4.5: 200k. Gemini 2.5 Pro: 2 million. Llama 3.1: 128k. A 200k context window can fit a full novel; a 2 million window can fit a whole codebase.</p>
+<p><b>The "lost in the middle" problem.</b> Research consistently shows that information placed at the beginning or end of a long context gets recalled accurately, but information in the middle gets fuzzy. If you're putting 50 documents in context, the ones in slots 20-30 will be the worst served. Solutions: put the most important info at the start or end, or use RAG to surface only what's needed.</p>
+<p><b>Cost scaling.</b> Inputs are priced per token, so a 200k token request costs roughly 100x a 2k request. Just because you can fit more doesn't mean you should. The "right" context size is usually the smallest one that contains the answer.</p>
+<p><b>Output tokens count too.</b> Many people forget: the context window holds both input AND output. A 128k window with a 100k input leaves only 28k for the model's response. Try to generate more and it cuts off mid-sentence. Plan for both.</p>`
       },
       {
         id: "embeddings",
@@ -563,10 +572,13 @@ const COURSE = [
 <p>This is the engine behind semantic search, RAG, clustering, and recommendation. You will use embeddings constantly.</p>`,
         model: `Embeddings = meaning turned into coordinates. Closeness on the map = similarity in meaning.`,
         mistakes: [
-          "Comparing embeddings from different models. They live in different spaces, the numbers are not interchangeable.",
-          "Using raw cosine values as 'percent similar.' They are relative, not absolute.",
-          "Embedding huge chunks of text. The longer the chunk, the more blurred the meaning."
-        ]
+          "Confusing embeddings with the LLM itself. They are different models with different training, often produced by the same provider.",
+          "Comparing embedding values directly. They are not interpretable on their own; you compare distances between them."
+        ],
+        goDeeper: `<p><b>What an embedding actually is.</b> A long list of numbers (a "vector") that represents the meaning of a piece of text. OpenAI's text-embedding-3-small produces 1,536-dimensional vectors. Each individual number means nothing. The shape of all 1,536 together captures meaning.</p>
+<p><b>How meaning becomes geometry.</b> Texts with similar meaning end up close in vector space. "I love dogs" and "I adore puppies" will be close. "I love dogs" and "The stock market crashed" will be far apart. Closeness is measured by cosine similarity (the angle between the two vectors) or sometimes Euclidean distance.</p>
+<p><b>Where embeddings come from.</b> They're produced by a smaller model trained specifically to put similar text in nearby places. The training trick: take a pair of related sentences, push their embeddings together; take a pair of unrelated sentences, pull their embeddings apart. Repeat at massive scale.</p>
+<p><b>What they enable.</b> Semantic search (find docs matching meaning, not just keywords). RAG (find relevant chunks for a question). Clustering (group similar texts). Recommendations. Roughly every AI feature involving "find me things similar to this" is using embeddings underneath.</p>`
       },
       {
         id: "transformers",
@@ -577,10 +589,13 @@ const COURSE = [
 <p>Daily-life analogy: an old model reads a book one word at a time, top to bottom, never looking back. A Transformer spreads the whole page on a table and, for each word, draws arrows to every other word it cares about.</p>`,
         model: `Transformer = a stack of layers where each layer does "look at every other token, decide who matters, mix their information together."`,
         mistakes: [
-          "Thinking Transformers process text sequentially. Training is parallel; only generation is sequential.",
-          "Believing 'Transformer' means 'LLM.' Transformers also power vision, audio and protein models.",
-          "Conflating the architecture with the weights. Same architecture, different weights = totally different model."
-        ]
+          "Confusing 'transformer' (the AI architecture) with the same word used in electrical engineering or the Transformers movies. Same word, totally different things.",
+          "Assuming 'transformer' is one specific model. It's a family of architectures. GPT, BERT, Llama, Claude, T5 are all transformers built differently."
+        ],
+        goDeeper: `<p><b>Why 2017 was the breakthrough year.</b> The original "Attention Is All You Need" paper (June 2017) introduced the transformer architecture. The key innovation: attention mechanisms that could process a whole sequence in parallel, instead of word-by-word like older RNN models. Suddenly you could train on much more data using much more hardware. Everything we now call "modern AI" descends from this paper.</p>
+<p><b>The core insight.</b> Old models read text left-to-right, building up understanding word by word. Transformers look at the whole input at once and use attention to decide which earlier words are most relevant to each current word. Parallel processing plus context-awareness equals dramatically smarter models.</p>
+<p><b>Two main flavours.</b> Encoder-decoder (T5, the original): one part processes input, another generates output. Decoder-only (GPT, Llama, Claude): one stream of attention that just predicts the next token. Most modern chat LLMs are decoder-only because it's simpler and scales better.</p>
+<p><b>The receipt is everywhere.</b> When you read about "attention heads", "positional encodings", "feed-forward layers", or "residual connections", those are all parts of a transformer block. Every LLM you've used in the last 7 years is some variant of the same fundamental architecture.</p>`
       },
       {
         id: "attention",
@@ -591,10 +606,13 @@ const COURSE = [
 <p>Daily-life analogy: you walk into a meeting and ask "who here knows about pricing?" (that is your Query). Everyone has a sign on them saying what they know (their Keys). You compare and rank. Then you actually take notes (Values) from the people whose signs matched best, weighted by how good a match they were.</p>`,
         model: `Attention = "for each token, do a soft weighted average of every other token, where the weights are learned similarity scores."`,
         mistakes: [
-          "Thinking attention is one thing. There are many 'attention heads' running in parallel, each learning to focus on different patterns.",
-          "Believing attention costs scale linearly with context. They are O(n²) by default, which is why long contexts are expensive.",
-          "Confusing self-attention (tokens within one sequence) with cross-attention (tokens between two sequences, used in encoder-decoder models)."
-        ]
+          "Confusing 'attention' (the LLM mechanism) with how humans pay attention. They're a metaphor away from each other, not the same thing.",
+          "Believing attention is the only thing the model does. It's one component; the feed-forward layers and the training data matter as much."
+        ],
+        goDeeper: `<p><b>What attention actually computes.</b> For each token, the model produces three vectors: a Query, a Key, and a Value. To decide how much one token should be influenced by another, you take the Query of the first and the Key of the second, multiply them together (a dot product), and that gives a "relevance score". Do this for every pair of tokens, normalise, then use the scores to weight a sum of Value vectors. That weighted sum becomes the new representation of the token.</p>
+<p><b>Multi-head attention.</b> Modern transformers don't have just one attention mechanism. They have many ("heads") running in parallel, each learning a different kind of relationship. One head might track grammatical structure; another might track which pronouns refer to which nouns. The model combines all of them.</p>
+<p><b>Why it's so expensive.</b> Every token attends to every other token, so the compute scales as O(n squared) with context length. A 100k context isn't just 100x more work than 1k; it's 10,000x. This is why long context is so much pricier and slower than short context.</p>
+<p><b>The classic example.</b> "The trophy did not fit in the suitcase because it was too big." What does "it" refer to? Now: "The trophy did not fit in the suitcase because it was too small." Now "it" refers to the suitcase. The only way to know is to weigh up the surrounding words. That weighing is attention.</p>`
       },
       {
         id: "parameters",
@@ -611,10 +629,13 @@ const COURSE = [
 </ul>`,
         model: `Parameters = total knobs the model has. Roughly: more knobs = more skill ceiling, more cost, slower.`,
         mistakes: [
-          "Equating parameter count with quality. A well-trained 8B can beat a poorly trained 70B on specific tasks.",
-          "Forgetting the rough VRAM rule: in fp16, model needs ~2x parameter count in GB. A 7B model ≈ 14GB. With quantization (e.g. Q4), divide by ~4.",
-          "Counting activated parameters vs total parameters in MoE models. Very different numbers."
-        ]
+          "Comparing parameter counts across model families as if they mean the same thing. A 70B dense model and a 70B mixture-of-experts model behave very differently.",
+          "Assuming you need to know the parameter count to use a model well. You mostly don't. It affects cost and where it can run."
+        ],
+        goDeeper: `<p><b>What a parameter is.</b> A single number inside the model that was learned during training. Modern models have anywhere from 1 billion to over a trillion parameters. Each one is typically a 16-bit or 32-bit floating point number representing a tiny piece of the model's "knowledge".</p>
+<p><b>Memory cost.</b> At 16-bit precision (fp16), every parameter takes 2 bytes of memory. So a 70B model needs 140GB of GPU memory just to be loaded, before you do any inference. Quantization to 4-bit cuts this 4x, bringing 70B down to about 35-40GB and into reach of a single high-end GPU.</p>
+<p><b>Common sizes in 2025.</b> Edge/phone: 1-3B (Llama 3.2, Phi-3 Mini). Laptop-runnable: 7-13B (Llama 3.1 8B, Qwen 2.5 7B). Server-grade open: 70B (Llama 3.1 70B). Frontier closed-source: estimated 200B-1T+ (GPT-5, Claude Opus, Gemini Ultra). The labs don't publish exact numbers anymore.</p>
+<p><b>Mixture of Experts changes the equation.</b> A Mixture of Experts (MoE) model like Mixtral 8x7B has 47 billion total parameters, but for any given token only about 13 billion are "active". So it costs less to run than a 47B dense model but has the capacity of one. The trend in frontier models is heavily MoE.</p>`
       },
       {
         id: "training-vs-inference",
@@ -626,10 +647,13 @@ const COURSE = [
 <p>Analogy: training is like teaching a chef every recipe in the world (years of school). Inference is asking the chef to cook one specific dish (a few minutes). The chef does not learn from your one order.</p>`,
         model: `Training = teaching (slow, expensive, rare). Inference = using (fast, cheap per call, constant).`,
         mistakes: [
-          "Thinking ChatGPT 'learns' from your conversation. It does not, unless explicit fine-tuning happens later.",
-          "Comparing training cost to inference cost as if they are similar. Training is a one-off megabudget; inference is a per-request cost.",
-          "Believing you need to train from scratch to customise a model. You almost never do. Fine-tuning or RAG is enough."
-        ]
+          "Mixing up the costs. Training is expensive once. Inference is cheap each time but happens billions of times. Most of the AI bill is inference at scale.",
+          "Thinking 'training' is happening when you chat. The model is frozen. Your chat history is just input data."
+        ],
+        goDeeper: `<p><b>Training in numbers.</b> Training GPT-4 reportedly cost upwards of $100 million in compute. Training Llama 3.1 405B took roughly 30 million GPU-hours. These numbers are why only a handful of organisations train frontier models from scratch.</p>
+<p><b>Three phases of training.</b> Pretraining (the big one, on the whole internet, builds raw next-token prediction). Supervised fine-tuning (much smaller, teaches the model how to respond to instructions). RLHF or DPO (smaller still, teaches it which responses humans prefer). Each phase costs an order of magnitude less than the one before it.</p>
+<p><b>Inference in numbers.</b> A single ChatGPT response costs maybe a fraction of a cent in raw compute. But across hundreds of millions of users, OpenAI spends huge sums on inference daily. Inference is where the scaling cost lives, not training.</p>
+<p><b>Why this matters for products.</b> Training and fine-tuning are one-off costs you can budget for. Inference is a per-user, per-call cost that scales with success. The unit economics question for any AI product is always: what does this cost per call, and can the user pay for it?</p>`
       },
       {
         id: "open-closed",
@@ -645,10 +669,13 @@ const COURSE = [
 <p>Most serious AI products today use both: closed APIs for hard tasks, open models for cheap/local/private tasks.</p>`,
         model: `Closed = renting a Ferrari. Open = owning a kit car you can mod. Pick based on cost, privacy, customisation, and how hard the task is.`,
         mistakes: [
-          "Calling 'open weight' the same as 'open source.' Open weight ≠ open data ≠ open training code.",
-          "Assuming open models are free. The model is free; the GPUs to serve it are not.",
-          "Locking into one provider. Always design your stack so you can swap models."
-        ]
+          "Assuming open-source means 'free'. The weights are free; running them needs hardware. Cloud GPU rental can quickly exceed the cost of API access.",
+          "Choosing open vs closed before knowing the workload. The right answer depends on privacy needs, volume, and how much you'll customise."
+        ],
+        goDeeper: `<p><b>What "open" actually means.</b> "Open weights" means anyone can download the trained model file and run it. It does NOT mean the training data or the training process is open. Llama, Mistral, Qwen, DeepSeek are all "open weights". True open source (weights + training data + code) is rare; the most notable example is OLMo from Allen AI.</p>
+<p><b>Closed-source advantages.</b> Frontier quality (GPT-5, Claude Sonnet 4.5, Gemini 2.5 are still ahead of any open model on the hardest tasks). No infrastructure burden. Hosted safety filters. Stable APIs. Pay-as-you-go pricing.</p>
+<p><b>Open-source advantages.</b> Run on-prem (data never leaves your network). No per-call fees (just compute cost). Full customisation via fine-tuning. No vendor lock-in. No surprise API deprecations.</p>
+<p><b>2025 reality check.</b> The quality gap between open and closed has shrunk dramatically. Llama 3.1 405B is competitive with GPT-4 for many tasks. Most enterprises now run a portfolio: closed APIs for the hardest tasks, open models for high-volume or privacy-sensitive work. The "either-or" framing is outdated.</p>`
       }
     ]
   },
@@ -668,10 +695,13 @@ const COURSE = [
 <p>Quality matters more than quantity. 1,000 hand-crafted examples often beat 100,000 noisy ones.</p>`,
         model: `SFT dataset = a stack of "here is a question, here is the perfect answer" cards. You hand the cards to the model many times until it learns the style.`,
         mistakes: [
-          "Using web-scraped noisy data for SFT. Garbage in, garbage out, faster than you'd think.",
-          "Making all examples too similar. The model will collapse to that one pattern.",
-          "Forgetting to include 'refusal' or 'edge case' examples. Then the model has no idea what to do when something weird comes in."
-        ]
+          "Confusing the size of an SFT dataset with its impact. A clean 10k examples often beats a noisy million.",
+          "Thinking SFT teaches the model 'facts'. It mostly teaches behaviour and format. Facts need to be learned in pretraining or supplied via RAG."
+        ],
+        goDeeper: `<p><b>SFT = Supervised Fine-Tuning.</b> The process where you take a base model that's just been trained to predict next tokens, and show it thousands of input-output pairs in the format "here's a prompt, here's the ideal response". The model learns to produce that format.</p>
+<p><b>Where SFT datasets come from.</b> Hand-written by humans (high quality, expensive). Generated by other LLMs and curated (faster, lower cost, watch for noise). Scraped from real conversations (most realistic, hardest to keep clean). Most modern SFT mixes all three.</p>
+<p><b>Famous open SFT datasets.</b> Alpaca (52k instructions, the OG of the genre). Dolly 15k (high quality, hand-written). Open-Hermes (1M+ entries, mixed). UltraChat (1.5M dialogues). These are useful starting points; most production fine-tunes use private, curated mixes.</p>
+<p><b>Format matters more than people expect.</b> Each model expects a specific chat template (special tokens marking user/assistant turns). Mismatched templates between training and inference is one of the most common silent failure modes in fine-tuning.</p>`
       },
       {
         id: "instruction-tuning",
@@ -685,10 +715,13 @@ const COURSE = [
 <p>Some datasets include an "input" slot for context, some don't. The famous public ones are Alpaca, Dolly, OpenAssistant, FLAN.</p>`,
         model: `Instruction tuning = teaching the base model the game of "I ask, you answer cleanly." Same technique as SFT, just with one specific data shape.`,
         mistakes: [
-          "Using only single-turn examples and then being surprised the model is bad at multi-turn chat.",
-          "Forgetting system prompts in the data. The model won't learn to respect them.",
-          "Mixing inconsistent formats. Pick one chat template and stick to it."
-        ]
+          "Confusing 'instruction tuning' with 'fine-tuning'. Instruction tuning is one specific kind of fine-tuning (the kind that teaches a model to follow instructions).",
+          "Thinking instruction-tuned models can't be tuned further. They can, and often are, on top."
+        ],
+        goDeeper: `<p><b>Why this was a breakthrough.</b> The 2020-era GPT-3 was technically capable but hard to use because it would just continue your text. You had to write clever prompts to make it answer questions. Instruction tuning (popularised by OpenAI's InstructGPT in 2022) reframed the model: train it to answer when asked, not just continue.</p>
+<p><b>The training recipe.</b> Take a base model. Show it thousands of (instruction, ideal response) pairs. The instructions cover everything: "summarise this", "rewrite this politely", "explain like I'm five", "translate this". Train. Now the model has learned the general pattern of "do what is asked".</p>
+<p><b>Why ChatGPT felt magic when it launched.</b> Underneath: GPT-3.5 + instruction tuning + RLHF. The base model didn't change much. The new layer of training was what made it feel useful instead of just impressive.</p>
+<p><b>Trade-off.</b> Instruction-tuned models are easier to use but slightly worse at raw text continuation. If you want to generate a long piece of creative writing, the base (non-instruction-tuned) version often produces more natural flow. Most labs ship both versions for this reason.</p>`
       },
       {
         id: "preference-datasets",
@@ -702,10 +735,13 @@ const COURSE = [
 <p>Coming up with the rejected response is the hard part. Often it's a worse model's answer, or an earlier version of the same model.</p>`,
         model: `SFT teaches "do this." Preferences teach "this beats that." Comparison is easier to label than absolute correctness.`,
         mistakes: [
-          "Assuming preferences are objective. They depend heavily on the labellers' values.",
-          "Building tiny preference datasets and expecting massive behaviour change. Preference tuning shifts style/tone more than knowledge.",
-          "Not checking inter-annotator agreement. If your labellers disagree a lot, the data is noisy."
-        ]
+          "Treating preferences as binary 'good vs bad'. Real preferences have nuance: relevance, tone, accuracy, helpfulness. Label them separately when possible.",
+          "Skipping inter-annotator agreement. If three humans disagree on which answer is better, you're not labelling reality; you're labelling personal taste."
+        ],
+        goDeeper: `<p><b>The data shape.</b> A preference dataset has rows like: (prompt, chosen response, rejected response). The "chosen" is what humans prefer; the "rejected" is the worse alternative. This is the fuel for both RLHF and the newer DPO method.</p>
+<p><b>How they're collected.</b> Show humans a prompt and two model-generated responses. They pick the better one. Do this thousands of times. The dataset has two superpowers: it captures human taste, and humans find it much easier to compare two answers than to write a perfect one from scratch.</p>
+<p><b>What makes a good preference dataset.</b> Diverse prompts (not just easy questions). Clear annotation guidelines (so labellers are consistent). Multiple annotators per pair (catches subjective disagreements). At least 10k pairs, ideally more (smaller and the signal is noisy).</p>
+<p><b>Famous open ones.</b> Anthropic's HH-RLHF (170k pairs, helpfulness and harmlessness). OpenAssistant. UltraFeedback. Most production preference work is private because the data is so company-specific.</p>`
       },
       {
         id: "synthetic-datasets",
@@ -716,10 +752,13 @@ const COURSE = [
 <p>It is powerful but it has limits. The student model can only get as good as what the teacher would have said. And legal terms of some APIs forbid this for commercial models.</p>`,
         model: `Synthetic data = the teacher LLM doing your homework so the student LLM can study from it.`,
         mistakes: [
-          "Skipping the quality filter. Synthetic data is full of subtle errors and the model will happily learn them.",
-          "Ignoring API terms of service. Some forbid using outputs to train competing models.",
-          "Generating data that all sounds the same. Add diversity prompts, varying styles, edge cases."
-        ]
+          "Assuming synthetic data is free quality. Garbage in, garbage out: a bad model generates bad training data, which makes a worse next model.",
+          "Forgetting to verify a sample by hand. Even great-looking synthetic data can have subtle systemic problems you only spot when you read 50 random rows."
+        ],
+        goDeeper: `<p><b>Why it took off.</b> Hand-written training data is slow and expensive. A strong LLM (Claude, GPT-5) can generate thousands of examples in minutes for cents. The maths gets very attractive at scale.</p>
+<p><b>The recipe.</b> Start with "seed" prompts (a few hundred good examples). Ask a strong model to generate variations and expansions. Curate by filtering bad outputs, deduplicating, and sometimes having a second model rate quality.</p>
+<p><b>Famous results.</b> Microsoft's Phi series was trained almost entirely on synthetic "textbook-quality" data and competes with much larger models. Anthropic's Constitutional AI uses synthetic preference data. Nvidia's Nemotron uses heavily synthetic SFT data.</p>
+<p><b>The "model collapse" worry.</b> Some researchers warn that training future models on data generated by current models could lead to a feedback loop where quality declines over generations. So far this hasn't materialised in practice, partly because filtering and human review break the loop. But it's a real long-term risk worth tracking.</p>`
       },
       {
         id: "data-curation",
@@ -736,10 +775,13 @@ const COURSE = [
 <p>For fine-tuning specifically: a few hundred high-quality, diverse, well-formatted examples often beats tens of thousands of mediocre ones.</p>`,
         model: `Curation = being a strict librarian for your model. Every example you keep shapes behaviour. Every duplicate is wasted attention.`,
         mistakes: [
-          "Treating all data as equal. It isn't. Source quality varies wildly.",
-          "Skipping deduplication. Even 10% duplicates can warp behaviour.",
-          "Curating once and never iterating. Look at your model's failures, find data gaps, refill, retrain."
-        ]
+          "Equating 'more data' with 'better model'. Quality beats quantity past a certain scale.",
+          "Skipping deduplication. Duplicate examples bias the model toward whatever was repeated."
+        ],
+        goDeeper: `<p><b>What data curation actually means.</b> Picking, filtering, cleaning, balancing, and structuring your training corpus. For pretraining, this might involve filtering 10 trillion web tokens down to 2 trillion "high quality" ones. For fine-tuning, it's reading through a hand-curated 10k examples and removing the duplicates and the obviously bad ones.</p>
+<p><b>The tools of the trade.</b> Language identification (drop everything not in your target languages). Deduplication (exact match, near-duplicate detection via MinHash). Quality filtering (often using a classifier trained on "good" vs "bad" examples). Toxicity filtering. PII removal.</p>
+<p><b>Famous examples.</b> FineWeb is Hugging Face's open curated pretraining corpus (15T tokens, heavily filtered from CommonCrawl). RedPajama is another. Both showed that careful curation of public data can match the quality of proprietary corpora.</p>
+<p><b>What dominates real teams' time.</b> Most production AI teams spend more on data work (acquisition, curation, labelling, evaluation) than on the model architecture itself. The clichéd "80% of ML is data" is roughly right.</p>`
       },
       {
         id: "dataset-cleaning",
@@ -757,10 +799,13 @@ const COURSE = [
 <p>Before/after metrics matter. Always log how many rows you cut and why.</p>`,
         model: `Dataset cleaning = washing vegetables before cooking. You can skip it once, but eventually someone gets sick.`,
         mistakes: [
-          "Over-cleaning. Stripping everything 'weird' can remove valid edge cases and make the model brittle.",
-          "Cleaning silently. Always log decisions so you can reverse one.",
-          "Forgetting to check character encoding. UTF-8 vs Latin-1 mismatches still happen in 2026."
-        ]
+          "Cleaning blindly without sampling. Always read 50-100 random rows before and after each cleaning step to see what you're actually changing.",
+          "Treating cleaning as a one-off. It's iterative: clean, train, look at failures, find the data class causing them, clean more."
+        ],
+        goDeeper: `<p><b>The common cleaning steps.</b> Deduplication (drop exact and near-duplicates). Length filtering (drop too-short and too-long examples). Format normalisation (consistent whitespace, encoding, newlines). Language detection (keep only target languages). PII redaction (strip emails, names, phone numbers). Profanity and toxicity filtering. URL removal or replacement.</p>
+<p><b>Order matters.</b> Deduplicate before quality filtering (otherwise you waste compute filtering things you'd drop anyway). Normalise format before any text-matching cleaning. Language-detect before any English-specific heuristics fire.</p>
+<p><b>The hidden value.</b> A common finding: removing the worst 10% of training data improves model quality more than adding 20% more average-quality data. Cleaning is one of the highest-ROI activities in ML.</p>
+<p><b>Tooling.</b> Hugging Face Datasets library (filter, dedupe, map). Pandas for quick exploration. Custom regex or LLM-based classifiers for trickier filtering. For pretraining-scale, distributed tools like Spark or Apache Beam.</p>`
       },
       {
         id: "dataset-formatting",
@@ -778,10 +823,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Also: pick one of JSONL, Parquet, or HF Datasets format and stick with it. Don't mix.</p>`,
         model: `Formatting = wearing the dress code. The model only "hears" you if your data wears the uniform it was trained on.`,
         mistakes: [
-          "Hand-rolling the chat template and missing one special token. Silent failure mode.",
-          "Forgetting the EOS token at the end of responses. Model never learns to stop.",
-          "Using a Llama template on a Qwen model and wondering why outputs are weird."
-        ]
+          "Mixing chat templates between training and inference. The same data formatted two different ways at train vs inference can silently break a fine-tune.",
+          "Forgetting special tokens. Each model has its own conventions for marking user/assistant turns; ignoring them produces broken output."
+        ],
+        goDeeper: `<p><b>Chat templates.</b> Every model has a specific text format for marking conversation turns. Llama 3 uses tokens like <code>&lt;|begin_of_text|&gt;</code> and <code>&lt;|start_header_id|&gt;</code>. Mistral uses <code>[INST]</code> and <code>[/INST]</code>. Mismatching this between training and inference is the most common silent failure mode in fine-tuning.</p>
+<p><b>The <code>tokenizer.apply_chat_template()</code> pattern.</b> Hugging Face standardised this with a method on the tokenizer that formats your messages list into the model's exact expected string. Use it religiously: read the model card, use the template it specifies, never roll your own.</p>
+<p><b>JSONL is the de facto fine-tuning format.</b> One JSON object per line. Each line is one training example. Common shapes: a "messages" key holding a chat array, or "prompt" and "completion" keys for plain completion training. Different fine-tuning libraries expect different shapes; check your library's docs.</p>
+<p><b>Special tokens beyond chat.</b> System messages. Tool calls. End-of-turn markers. Stop sequences. Each model handles these differently. When you read "this fine-tune mysteriously generates &lt;tool_call&gt; tags", the answer is almost always a format mismatch.</p>`
       },
       {
         id: "fine-tuning-basics",
@@ -797,10 +845,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>When to fine-tune vs just use a better prompt or RAG: fine-tune when you want consistent style/format/behaviour, not when you want new facts (RAG is better for that).</p>`,
         model: `Fine-tuning = adjusting an already-trained chef's seasoning preferences, not teaching them to cook from scratch.`,
         mistakes: [
-          "Fine-tuning to inject facts. Facts forget; behaviour sticks. Use RAG for facts.",
-          "Fine-tuning before trying better prompts and RAG. Always try the cheap thing first.",
-          "Not holding out an eval set. You won't know if you improved or destroyed the model."
-        ]
+          "Reaching for fine-tuning when prompting would solve it. Try good prompting plus few-shot examples first. Fine-tune only if prompting plateaus.",
+          "Using too-large a learning rate. Most catastrophic fine-tunes are because the model 'forgot' its general abilities. Lower learning rates preserve more."
+        ],
+        goDeeper: `<p><b>The decision tree.</b> Need the model to do a specific task in a specific format? Try prompting first. Still too inconsistent? Add few-shot examples (5-10 in the prompt). Still bad? Then fine-tune. Most teams skip the prompt-engineering phase and jump straight to fine-tuning. Big mistake.</p>
+<p><b>Methods, from easiest to hardest.</b> Prompt engineering (no training). Few-shot prompting (no training). LoRA fine-tuning (cheap training). QLoRA (cheapest). Full fine-tuning (expensive). Continued pretraining (most expensive, rarely needed). Pick the simplest method that works.</p>
+<p><b>What fine-tuning is good at.</b> Tone of voice. Output format (always reply in JSON, etc.). Domain-specific phrasing. Task-specific behaviours. NOT good at: teaching the model new factual knowledge (that's RAG's job).</p>
+<p><b>The "catastrophic forgetting" trap.</b> Fine-tune too aggressively and the model "forgets" its general abilities. Sign of this: the model nails your fine-tuned task but is suddenly worse at unrelated tasks. Fix: use a small learning rate, train for fewer epochs, or mix in some general training data.</p>`
       },
       {
         id: "continued-pretraining",
@@ -811,10 +862,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>This is heavy. You need a lot of clean text and a lot of GPU. Most teams skip straight to SFT or LoRA. Continued pretraining only pays off when your domain is genuinely far from the base distribution (rare languages, hard sciences, niche code).</p>`,
         model: `Continued pretraining = sending the model to a graduate programme in your field before you ask it to do the job.`,
         mistakes: [
-          "Doing this when SFT or RAG would have been enough.",
-          "Skipping the SFT step afterwards. The model still won't follow instructions.",
-          "Catastrophic forgetting: the model gets great at your domain and worse at everything else. Mix in some general data to prevent this."
-        ]
+          "Confusing continued pretraining with fine-tuning. Continued pretraining is more expensive and teaches the model new general knowledge, not just new behaviour.",
+          "Reaching for it before considering simpler options. Most use cases don't need it; SFT or RAG will do."
+        ],
+        goDeeper: `<p><b>The hierarchy.</b> Pretraining (build the base model, expensive). Continued pretraining (teach more general knowledge on top, still expensive). Fine-tuning (teach behaviour, cheap). RAG (give knowledge at inference time, very cheap). Continued pretraining sits between regular pretraining and fine-tuning.</p>
+<p><b>When you actually need it.</b> Niche domain with vocabulary the base model doesn't know (medical, legal, scientific). Non-English languages underrepresented in the base. Highly technical content where domain-specific structure matters. For most enterprise use cases, RAG covers the gap without this step.</p>
+<p><b>The recipe.</b> Take a base model. Train it on a large corpus of your domain text (typically tens of millions of tokens minimum, often billions). Use a much lower learning rate than original pretraining. Then optionally fine-tune on top for specific tasks.</p>
+<p><b>Cost reality.</b> Even "cheap" continued pretraining of a 7B model on 1B tokens costs in the low thousands of dollars of GPU time. Most teams skip it and rely on RAG to inject domain knowledge at inference instead.</p>`
       },
       {
         id: "hallucination-reduction",
@@ -832,10 +886,13 @@ What is 2+2?&lt;|im_end|&gt;
 </ul>`,
         model: `Hallucinations are not a bug; they are the default. Grounding the model in real data is how you fight them.`,
         mistakes: [
-          "Trying to 'fine-tune away' hallucinations on a small dataset. It rarely works and often makes them more confident.",
-          "Trusting citations the model invented. Always verify retrieved sources actually exist.",
-          "Assuming bigger models hallucinate less. They do somewhat, but they also hallucinate more confidently."
-        ]
+          "Believing hallucinations can be eliminated. They can only be reduced. The underlying mechanism (statistical pattern completion) is inherently fallible.",
+          "Treating 'I don't know' as a failure. It's actually a model behaving well. Penalise confident wrong answers, reward calibrated uncertainty."
+        ],
+        goDeeper: `<p><b>Why hallucinations happen.</b> LLMs are next-token prediction systems. When they don't know an answer, they don't have a "don't know" button. They just produce the most likely next token given the context. The result is plausible-sounding fabrication, especially in detailed factual answers.</p>
+<p><b>The tools to reduce them.</b> RAG (give the model real source material). System prompts that explicitly say "if you don't know, say so". Citations (force the model to cite sources, then validate the citations exist). Lower temperature (less random sampling, closer to the most-confident token). Specific fine-tuning on "I don't know" examples.</p>
+<p><b>Detection at scale.</b> Run the same query twice with non-zero temperature: if you get inconsistent answers, the model probably doesn't "know" the answer. Or use a second model as a critic: "Is this answer supported by this source?". Or look for specific output patterns (names, dates, citations) and validate them programmatically.</p>
+<p><b>Frontier models in 2025.</b> Top models hallucinate maybe 1-3% of the time on factual tasks with good prompting. Smaller models, 10-20% or more. The gap is closing as labs invest in this, but it'll likely never hit zero.</p>`
       }
     ]
   },
@@ -870,10 +927,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Trade-off: very slight quality drop vs full-precision LoRA, but it is usually negligible compared to the cost saving.</p>`,
         model: `QLoRA = LoRA, but the frozen base model is squished into 4-bit so it actually fits in your GPU.`,
         mistakes: [
-          "Trying to merge a LoRA adapter back into a 4-bit base. Dequantize first.",
-          "Forgetting QLoRA training is slower per step than LoRA (extra dequant work) even though it uses less memory.",
-          "Using QLoRA when you have plenty of VRAM. Just use plain LoRA in that case."
-        ]
+          "Assuming QLoRA gives full-precision quality. There's a small but real quality hit from running the base in 4-bit. Worth measuring on your eval.",
+          "Forgetting that the trained adapter is high-precision. At inference time you need to either keep the base quantized too, or merge carefully."
+        ],
+        goDeeper: `<p><b>The technique stack.</b> QLoRA equals quantize the base model to 4-bit (cuts memory 4x) plus train LoRA adapters in high precision on top. The base stays frozen and quantized; the adapters get trained normally. The whole thing fits where the base model alone wouldn't.</p>
+<p><b>The magic number.</b> A 65B model in fp16 needs about 130GB of GPU memory. The same model in 4-bit QLoRA needs about 33GB, small enough to fit on a single A100 or even some consumer cards. This is what made "fine-tune Llama 65B at home" a real thing.</p>
+<p><b>The quality cost.</b> 4-bit quantization typically costs 1-3% on benchmarks vs the original fp16. Often invisible in practice. NF4 (the special 4-bit format used by QLoRA) is specifically designed to preserve quality better than uniform 4-bit.</p>
+<p><b>How to actually run it.</b> The <code>bitsandbytes</code> library handles the 4-bit loading. Hugging Face PEFT handles the LoRA adapter management. The Unsloth library wraps both with significant speedups (often 2-5x faster training).</p>`
       },
       {
         id: "dpo",
@@ -884,10 +944,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Result: takes a few hours, no exotic RL machinery, very stable, easy to debug. Most modern open chat models (Llama 3, Mistral, Qwen) use some form of DPO or its variants (IPO, KTO, SimPO).</p>`,
         model: `DPO = "make the good answer more likely and the bad answer less likely, directly." No reward model, no PPO, no drama.`,
         mistakes: [
-          "Running DPO on a base model without SFT first. DPO refines an instruction-tuned model; it doesn't create one.",
-          "Using too small a preference dataset. A few hundred is the minimum useful range; thousands is better.",
-          "Setting beta too low. Beta controls how strongly DPO pulls towards preferences vs staying close to the original."
-        ]
+          "Confusing DPO with RLHF. Same goal, different maths. DPO is simpler and usually cheaper.",
+          "Using DPO without good preference data. The technique can't fix bad data; it can only learn what you label."
+        ],
+        goDeeper: `<p><b>DPO = Direct Preference Optimization.</b> A 2023 paper showed you could achieve the same effect as RLHF without the complex reinforcement learning setup. Instead of training a reward model and then doing PPO, DPO just trains directly on preference pairs using a simpler loss function.</p>
+<p><b>What changed in practice.</b> RLHF requires reward model training plus PPO setup plus extensive hyperparameter tuning. DPO requires feeding preference pairs to a training loop, picking a beta hyperparameter, and hitting train. The result: similar quality, less infrastructure, way less expertise required.</p>
+<p><b>Why teams switched.</b> Llama 3, Qwen 2, and most 2024-onwards open models use DPO (or variants like KTO, ORPO) instead of RLHF. OpenAI and Anthropic still use RLHF for top-tier production models because of nuanced behaviours that DPO struggles with, but DPO covers maybe 80% of teams' needs.</p>
+<p><b>The library.</b> Hugging Face's TRL has DPOTrainer. Expected data columns: <code>prompt</code>, <code>chosen</code>, <code>rejected</code>. Train for 1-3 epochs on a few thousand pairs and you'll see meaningful changes in behaviour.</p>`
       },
       {
         id: "rlhf",
@@ -903,10 +966,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>RLHF is powerful but operationally painful: three models in memory at once, unstable training, tricky to debug. DPO collapses steps 2-3 into one direct loss function.</p>`,
         model: `RLHF = "train a judge LLM to score responses, then make the main LLM chase higher scores." DPO skipped the judge.`,
         mistakes: [
-          "Conflating 'reward hacking' with the model being smart. If a model finds a weird way to score high, that is a sign your reward model is broken.",
-          "Using RLHF in 2026 when DPO/IPO/KTO would do the same job with 1/10th the operational pain.",
-          "Forgetting the KL penalty. Without it, the model drifts too far from the SFT starting point and starts producing gibberish that the reward model happens to love."
-        ]
+          "Equating RLHF with 'the alignment technique that matters'. It's one technique among several. DPO, Constitutional AI, RLAIF are alternatives.",
+          "Underestimating its instability. RLHF training can collapse in subtle ways that DPO usually doesn't."
+        ],
+        goDeeper: `<p><b>The pipeline, in three steps.</b> (1) Fine-tune a model with SFT to follow instructions. (2) Collect preference pairs and train a "reward model" that predicts which response humans prefer. (3) Use the reward model as a signal in reinforcement learning (PPO algorithm) to make the language model produce preferred outputs.</p>
+<p><b>Why it was a breakthrough.</b> Pre-RLHF chatbots were technically capable but rude, verbose, or evasive. RLHF taught models to be helpful, polite, and refuse harmful requests. ChatGPT's launch in 2022 was the moment the world saw what RLHF could do at scale.</p>
+<p><b>Why it's hard.</b> PPO is notoriously finicky. Reward hacking is a constant problem (the model learns to game the reward model rather than be genuinely better). Training compute is significant. Three separate models in memory at once during training. Most teams now reach for DPO first.</p>
+<p><b>Variants worth knowing.</b> Constitutional AI (Anthropic): use AI feedback instead of human, guided by a written constitution of principles. RLAIF: same idea, AI labels preferences. KTO: simpler than DPO, works with binary "good/bad" labels instead of pairs.</p>`
       },
       {
         id: "quantization",
@@ -922,10 +988,13 @@ What is 2+2?&lt;|im_end|&gt;
 </ul>`,
         model: `Quantization = rounding the model's numbers to use less memory. A bit of accuracy lost, a lot of memory saved.`,
         mistakes: [
-          "Going straight to 2-bit and complaining the model is dumb. Try 4-bit first.",
-          "Quantizing without testing. Always run an eval set before and after.",
-          "Mixing quantization methods between training and inference. The behaviour can shift."
-        ]
+          "Assuming all quantization is equal. INT8, NF4, GPTQ, AWQ, GGUF Q4_K_M are different formats with different trade-offs.",
+          "Ignoring quality measurement. Always run your eval suite before and after quantizing. The hit varies wildly by task."
+        ],
+        goDeeper: `<p><b>The core idea.</b> Each parameter in a model is normally stored as a 16-bit floating-point number. Quantization reduces this to 8-bit, 4-bit, or even lower. 4-bit quantization makes the model about 4x smaller in memory and slightly faster, at the cost of 1-5% quality.</p>
+<p><b>The popular formats.</b> GGUF (llama.cpp's format, runs on CPU and GPU, used by Ollama). GPTQ (older, GPU-only, smart quantization). AWQ (newer GPU format, often best quality at 4-bit). NF4 (specifically for QLoRA training). The "right" choice depends on your runtime.</p>
+<p><b>Q4_K_M sweet spot.</b> In the GGUF ecosystem, Q4_K_M is the most common choice: roughly 4-bit average with smarter packing for important weights. Typically loses 1-2% quality vs fp16. Q5_K_M is even better quality at slightly more memory.</p>
+<p><b>When NOT to quantize.</b> If your task is very sensitive to small accuracy differences (legal reasoning, complex maths, exact API calls), measure carefully. Some specific behaviours degrade more than the average benchmark suggests.</p>`
       },
       {
         id: "checkpoints",
@@ -941,10 +1010,13 @@ What is 2+2?&lt;|im_end|&gt;
 </ul>`,
         model: `Checkpoint = "save game" for a model. Same idea as Ctrl+S, just with billions of numbers.`,
         mistakes: [
-          "Only keeping the final checkpoint. The best one is often a few steps earlier.",
-          "Not versioning data alongside checkpoints. Same code + different data = different model, untraceable.",
-          "Disk-filling: training runs can produce hundreds of GB of checkpoints. Set retention policies."
-        ]
+          "Treating every release as a 'new model'. Often it's an iterated checkpoint of the same base.",
+          "Not saving checkpoints during training. If training crashes at step 9,500 of 10,000, you lose everything without checkpoint saves."
+        ],
+        goDeeper: `<p><b>What a checkpoint actually is.</b> A snapshot of the model's weights at a specific point in training. Saved as a file (PyTorch .bin, SafeTensors, GGUF). You can pick up training from a checkpoint, or use it as a final model.</p>
+<p><b>The checkpoint-as-model-release.</b> When "Llama 3.1 405B" is released, what's actually being released is a specific checkpoint that the lab decided was the right balance of quality and stopping point. Other checkpoints from the same training run exist internally but never see daylight.</p>
+<p><b>Practical training pattern.</b> Save a checkpoint every N steps (often 1000-5000). Keep the last 3-5 checkpoints. Evaluate each one on your validation set. Pick the best for deployment. Hugging Face Transformers and TRL handle this automatically with <code>save_steps</code> and <code>save_total_limit</code>.</p>
+<p><b>Where to find published checkpoints.</b> Hugging Face Hub for open models. Each model card lists the available checkpoints and their differences. Some models have base, instruct, and chat variants, all derived from the same pretrain but with different downstream training.</p>`
       },
       {
         id: "adapter-tuning",
@@ -955,10 +1027,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Big practical benefit: you can store many adapters for the same base model and hot-swap them at inference time. One 7B base + 20 task-specific adapters = effectively 20 specialised models for the storage cost of one.</p>`,
         model: `Adapters = small detachable add-ons that change the model's behaviour without touching the base. Like specialist lenses for a camera body.`,
         mistakes: [
-          "Reinventing the wheel. PEFT library covers almost every adapter method already.",
-          "Stacking adapters carelessly. Combining two adapters trained separately can give unpredictable behaviour.",
-          "Not naming your adapters clearly. After 5 fine-tunes you will have no idea which one is which."
-        ]
+          "Calling 'adapters' and 'LoRA' the same thing. LoRA is one popular adapter technique; there are others (prefix tuning, prompt tuning, IA3).",
+          "Forgetting that adapters need the base model to run. They're useless on their own — pure orchestration overhead."
+        ],
+        goDeeper: `<p><b>The adapter family.</b> LoRA (the popular one — low-rank matrices). IA3 (smaller still — just scales activations). Prefix tuning (learnable prefix vectors prepended to each layer). Prompt tuning (learnable tokens at the input only). Each trades off expressivity for parameter count.</p>
+<p><b>Why companies love adapters.</b> One base model file plus many small adapter files equals one inference server can serve many fine-tuned models. Different customers, different teams, different use cases, all sharing the GPU memory of the base model.</p>
+<p><b>The serving pattern.</b> Load the base model once into GPU memory. Load adapters into RAM/disk. For a request, dynamically swap the active adapter (modern frameworks like vLLM and TGI do this in milliseconds). User A gets a customer-support fine-tune, user B gets a coding fine-tune, both served from the same base.</p>
+<p><b>OpenAI's hidden adapter game.</b> The fine-tuning feature in OpenAI's API is heavily based on adapter techniques behind the scenes (specific details aren't public). That's why fine-tuned models cost the same as base ones to serve — they're not actually distinct full models.</p>`
       },
       {
         id: "gguf",
@@ -975,10 +1050,13 @@ What is 2+2?&lt;|im_end|&gt;
 </ul>`,
         model: `GGUF = "model in a box" file format for local inference. Same idea as MP3 for audio: a portable, compressed package the player just needs to open.`,
         mistakes: [
-          "Mixing up GGUF with GGML. GGML was the old format. GGUF replaced it. Don't download GGML files in 2026.",
-          "Using a GGUF file with vLLM. vLLM doesn't speak GGUF; it wants Hugging Face safetensors or AWQ/GPTQ.",
-          "Picking quant levels by file size alone. Always check perplexity or run a quick eval."
-        ]
+          "Assuming GGUF is a model. It's a file format for storing quantized models, used by llama.cpp.",
+          "Picking a GGUF quant level by file size alone. Q4_K_M is usually the right default; smaller quants sometimes lose noticeable quality."
+        ],
+        goDeeper: `<p><b>The format origin.</b> GGUF (GGML Universal Format) is the file format used by llama.cpp, the C++ library that pioneered running LLMs efficiently on consumer hardware. Replaced the older GGML format in 2023. Every "local AI" app you've used (Ollama, LM Studio, Jan, GPT4All) uses GGUF.</p>
+<p><b>What's inside a GGUF.</b> The model weights at the chosen precision (Q4_K_M, Q5_K_M, Q8_0, fp16). The tokenizer. The chat template. Architecture metadata. Everything needed to run the model in one file. Typical sizes: a 7B model at Q4_K_M is 4-5GB.</p>
+<p><b>The quant ladder.</b> Q2_K (smallest, noticeably degraded). Q3_K_M (smaller). Q4_K_M (sweet spot, usual default). Q5_K_M (slightly better quality). Q6_K (close to fp16). Q8_0 (8-bit, very close to fp16). FP16 (full precision, biggest). For everyday use, Q4_K_M is the right default. Heavier tasks or higher-quality requirements: step up to Q5 or Q6.</p>
+<p><b>Where to find them.</b> Hugging Face has thousands of community-quantized GGUFs. Look for trusted users like "TheBloke" (historic gold standard, semi-retired) or "bartowski" (currently very active). Or run your own quantization with llama.cpp's tools.</p>`
       }
     ]
   },
@@ -995,10 +1073,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Cost: the cache lives in GPU memory. It grows with context length, batch size, and number of layers. For long contexts, the KV cache can be larger than the model itself.</p>`,
         model: `KV cache = the model's "scratchpad" of what it already computed for the prompt. Without it, generation is O(n²). With it, O(n).`,
         mistakes: [
-          "Forgetting KV cache when budgeting VRAM. Long-context inference is KV-cache-bound, not weights-bound.",
-          "Trying to reuse KV cache across different prompts. The cache is prompt-specific (though prompt caching tricks exist).",
-          "Ignoring techniques like grouped-query attention (GQA) and KV cache quantization, which can shrink the cache substantially."
-        ]
+          "Confusing KV cache size with model size. They scale independently. A 7B model with 32k context can have a bigger KV cache than the model weights.",
+          "Forgetting that KV cache is per-request. Each user's conversation has its own KV cache in memory."
+        ],
+        goDeeper: `<p><b>What KV cache stores.</b> For each token in the conversation so far, the Key and Value vectors from the attention mechanism. These are needed to compute attention for any new token. By caching them, you avoid recomputing the entire attention for the whole conversation on every new token.</p>
+<p><b>The size formula.</b> KV cache size = 2 (K and V) × num_layers × num_heads × head_dim × context_length × 2 bytes (fp16). For Llama 3 70B with 32k context: 2 × 80 × 64 × 128 × 32,000 × 2 = about 80GB. Yes, the cache alone can be bigger than the model weights.</p>
+<p><b>Why first-token latency is high.</b> The first token requires processing the entire input prompt and building the KV cache from scratch. Subsequent tokens only need to extend the cache by one slot. So a 10k-token prompt with a 100-token answer might take 3 seconds for the first token and 1 second for the remaining 99 — most of the cost is in the first.</p>
+<p><b>How serving frameworks help.</b> vLLM's PagedAttention treats KV cache like virtual memory, allowing efficient sharing across requests and dynamic batching. This is why vLLM is 2-10x faster than naive implementations at serving multiple users.</p>`
       },
       {
         id: "flash-attention",
@@ -1009,10 +1090,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Result: 2-4x faster attention, much less memory used, longer contexts feasible. It is now the default in PyTorch, vLLM, and most modern inference engines.</p>`,
         model: `Flash Attention = "same maths, smarter memory layout." The algorithm didn't change; the way it talks to GPU memory did.`,
         mistakes: [
-          "Treating Flash Attention as something you 'install.' Usually it's a flag you enable, or it's already on.",
-          "Assuming it changes outputs. It doesn't. Same numbers, just faster.",
-          "Using v1 when v2 or v3 is available. Each version is meaningfully faster."
-        ]
+          "Assuming Flash Attention changes model quality. It doesn't. It's an exact-equivalent faster implementation.",
+          "Worrying about installing it manually. Modern PyTorch and most inference frameworks include it by default now."
+        ],
+        goDeeper: `<p><b>The problem it solves.</b> Standard attention requires materialising a large attention matrix (size: context × context) in GPU memory. For a 32k context, that's 1 billion entries per attention head. Memory bandwidth, not compute, becomes the bottleneck.</p>
+<p><b>The Flash Attention trick.</b> Compute attention in chunks that fit in GPU SRAM (fast on-chip memory) instead of materialising the full matrix in HBM (slower off-chip memory). Mathematically equivalent to standard attention, but 2-4x faster and uses far less memory.</p>
+<p><b>The versions.</b> Flash Attention 1 (2022): the original. Flash Attention 2 (2023): better parallelism, about 2x faster than v1. Flash Attention 3 (2024): targets Hopper GPUs (H100), uses tensor cores more efficiently. Each generation pulls more performance out of newer hardware.</p>
+<p><b>Where it's deployed.</b> Standard in PyTorch 2.0+, vLLM, TGI, all major training frameworks. You're almost certainly using it without knowing. Modern AI infrastructure assumes it's there.</p>`
       },
       {
         id: "speculative-decoding",
@@ -1023,10 +1107,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Result: typical 2-3x speedup at inference, completely free in terms of quality.</p>`,
         model: `Speculative decoding = a fast assistant types out a draft, the slow expert checks it in one glance, you keep the agreed parts. Same final text, less waiting.`,
         mistakes: [
-          "Picking a draft model too different from the big model. Low acceptance rate = no speedup.",
-          "Using speculative decoding on tiny batch sizes only. Some inference engines disable it under load.",
-          "Confusing speculative decoding with 'medusa heads' or 'lookahead decoding.' Related family, different mechanics."
-        ]
+          "Assuming it's lossy quality. It IS lossless when implemented correctly — the verification step ensures outputs match what the big model would produce.",
+          "Using it for short outputs. The overhead doesn't pay off for sub-50-token outputs."
+        ],
+        goDeeper: `<p><b>The mechanism.</b> Have two models: a big slow one (the target) and a small fast one (the draft). The draft model generates several candidate tokens. The target model evaluates them in parallel and accepts any that match what it would have generated, rejecting and regenerating the rest. Net result: you get target-quality output at potentially 2-3x the speed.</p>
+<p><b>Why it works.</b> Big-model inference is bottlenecked by memory bandwidth, not compute. The big model is mostly waiting on weights to load from memory. Evaluating 5 candidate tokens in parallel uses the same memory bandwidth as evaluating 1 token sequentially. So you get extra tokens "for free".</p>
+<p><b>The acceptance rate.</b> Depends on how good the draft model is at predicting the target. For coding tasks, acceptance can be 60-80% (very predictable). For creative writing, 30-40%. The speedup tracks the acceptance rate.</p>
+<p><b>Modern variants.</b> Medusa: multiple draft heads, no separate draft model. EAGLE-2: improved draft model design, higher acceptance. Self-speculative: the model speculates for itself. All flavours of the same core idea.</p>`
       },
       {
         id: "inference-optimization",
@@ -1045,10 +1132,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>You rarely build these yourself. You pick an engine (vLLM, TensorRT-LLM, SGLang, llama.cpp) that does most of them for you.</p>`,
         model: `Inference optimization = squeezing more tokens per second per dollar out of the same GPU, mostly by being clever about memory and batching.`,
         mistakes: [
-          "Optimising before measuring. Profile first, optimise second.",
-          "Picking an engine based on hype, not on your workload (long context vs high throughput vs low latency).",
-          "Forgetting that the slowest part might be the network, not the GPU."
-        ]
+          "Optimising before measuring. Profile first to know where the time actually goes. Often it's not where you think.",
+          "Skipping quantization because of perceived quality fears. Modern 4-bit quants lose almost nothing for most tasks."
+        ],
+        goDeeper: `<p><b>The optimization stack, in order of payoff.</b> (1) Quantization (4-bit Q4_K_M typically): 4x memory savings, 1.5-2x speed. (2) Batching: 5-10x throughput for high-concurrency. (3) KV cache management (PagedAttention via vLLM): another 2-3x for multi-user. (4) Speculative decoding: 1.5-3x speed for long outputs. (5) Flash Attention: built in by default now. (6) Continuous batching: lets requests start/finish independently.</p>
+<p><b>The metric you care about.</b> Time-to-first-token (TTFT) for chat apps, tokens-per-second (TPS) for streaming, total throughput for batch jobs. These optimise differently. Don't tune for the wrong one.</p>
+<p><b>Frameworks ranked.</b> vLLM (most popular, best general-purpose). TensorRT-LLM (Nvidia-only, fastest on Hopper). SGLang (newer, often fastest). llama.cpp (CPU + GPU, best for local). TGI (Hugging Face's). Pick based on your hardware and constraints.</p>
+<p><b>The first thing to do.</b> Run the same inference task with PyTorch raw vs vLLM. Often you'll see 5-10x speedup with no code changes. That's your baseline; further optimization is incremental from there.</p>`
       },
       {
         id: "model-serving",
@@ -1066,10 +1156,13 @@ What is 2+2?&lt;|im_end|&gt;
 </ul>`,
         model: `Model serving = the rest of the iceberg under your API call. The model is 10%; the serving infra is 90%.`,
         mistakes: [
-          "Putting one model behind one process and calling it 'production.' First spike kills it.",
-          "Ignoring tail latency. p99 is what your users feel, not p50.",
-          "Skipping graceful degradation. When the model is overloaded, what do you serve? An error? A cached response? A smaller model? Decide upfront."
-        ]
+          "Building serving infrastructure from scratch. vLLM, TGI, and similar exist for exactly this. Use them.",
+          "Forgetting capacity planning. Knowing your QPS and tail-latency budget should come BEFORE choosing a model size."
+        ],
+        goDeeper: `<p><b>What model serving actually involves.</b> Load the model into GPU memory. Listen on an HTTP endpoint. Accept requests (with prompts, max_tokens, temperature, etc.). Batch them efficiently. Stream tokens back to clients as they're generated. Handle errors. Monitor for latency, GPU utilisation, queue depth.</p>
+<p><b>Production-grade tools.</b> vLLM (most popular OSS server, OpenAI-compatible API). TGI (Hugging Face's). TensorRT-LLM (Nvidia, fastest on H100). Triton Inference Server (Nvidia's general inference server). Each is a battle-tested replacement for "I built my own with FastAPI".</p>
+<p><b>The OpenAI-compatible API standard.</b> Most modern servers expose endpoints that match OpenAI's <code>/v1/chat/completions</code> exactly. This means you can swap clients in and out (use the OpenAI Python SDK pointing at your own server) without code changes. Industry alignment that benefits everyone.</p>
+<p><b>Capacity planning rules.</b> Per A100 80GB: roughly 30-50 tokens/sec for a 70B model at fp16, more for quantized, more with batching. Plan for 70-80% peak utilisation; leave headroom for traffic spikes. Use autoscaling for variable load.</p>`
       },
       {
         id: "batch-inference",
@@ -1083,10 +1176,13 @@ What is 2+2?&lt;|im_end|&gt;
 </ul>`,
         model: `Batching = carpooling for tokens. One trip moves many passengers. Continuous batching = passengers can hop on and off mid-route.`,
         mistakes: [
-          "Running an inference engine that doesn't do continuous batching for a chat workload. You're leaving most of your GPU idle.",
-          "Cranking batch size too high and blowing past VRAM, causing OOM crashes.",
-          "Forgetting that latency per request goes up slightly inside a big batch. You trade single-request speed for total throughput."
-        ]
+          "Setting batch size too high. Above some threshold, you trade latency for throughput. Make sure your tail latency budget can absorb it.",
+          "Confusing static batching with continuous batching. Continuous is much better for variable-length workloads."
+        ],
+        goDeeper: `<p><b>Static vs continuous batching.</b> Static: take N requests, wait for all to finish, return all together. Waste of compute when some requests are short and others long. Continuous (or "in-flight") batching: as soon as one request finishes, slot a new one into the GPU. Much higher utilization.</p>
+<p><b>The throughput-latency tradeoff.</b> Larger batches mean higher throughput but higher per-request latency (because each request waits for the batch to fill). Single-user chat needs small batches for low latency. High-volume background processing wants big batches for cost efficiency.</p>
+<p><b>Where batching shines.</b> Embedding generation (no streaming needed, batches of 1000+ are common). Document summarization pipelines. Classification at scale. Synthetic data generation. Generally: any time you have many independent prompts to process.</p>
+<p><b>How vLLM defaults work.</b> Continuous batching by default. Max batch size auto-tuned based on GPU memory and KV cache budget. Variable-length sequences handled gracefully. For most teams, this is the default starting point.</p>`
       },
       {
         id: "gpu-basics",
@@ -1103,10 +1199,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Rule of thumb in 2026: for LLM inference, you are usually memory-bandwidth-bound, not FLOPs-bound.</p>`,
         model: `GPU = a giant choir all singing the same note at once. Perfect for matrix maths, terrible for serial logic.`,
         mistakes: [
-          "Buying a GPU based on FLOPs when memory bandwidth is what matters for inference.",
-          "Confusing 'datacentre' GPUs (H100, A100) with 'consumer' GPUs (RTX 4090, 5090). Same family, very different software support.",
-          "Ignoring NVLink / PCIe bandwidth when planning multi-GPU setups."
-        ]
+          "Equating 'GPU' with 'gaming graphics card'. ML workloads use specific GPU features (tensor cores, large VRAM, NVLink) that consumer cards mostly lack.",
+          "Buying GPU specs based on FLOPS alone. Memory bandwidth and VRAM size matter more for LLM inference."
+        ],
+        goDeeper: `<p><b>What matters for LLMs.</b> VRAM (memory) determines what fits. Memory bandwidth determines how fast inference goes. Tensor cores (specialised matrix multiplication units) accelerate everything. Interconnect (NVLink, InfiniBand) matters for multi-GPU training. Raw FP32 FLOPS, the spec consumer reviewers care about, is mostly irrelevant.</p>
+<p><b>The 2025 hardware landscape.</b> Datacentre: H100 (80GB, the workhorse), H200 (141GB, more memory), B200 (Blackwell, about 2x H100). Consumer: RTX 4090 (24GB, great for local inference and small fine-tunes), RTX 5090 (32GB, just released). Apple Silicon: M3/M4 Max (up to 128GB unified memory, surprisingly capable for inference).</p>
+<p><b>Cloud GPU costs (rough 2025).</b> A100 80GB: $1-2/hr on spot. H100: $2-5/hr on spot. Significant savings from spot vs on-demand. Reserved capacity is cheaper still but requires commitment.</p>
+<p><b>Why CUDA wins.</b> Nvidia's software stack (CUDA, cuDNN, cuBLAS) has 15+ years of head start on AMD/Intel for ML. Even though AMD MI300X has competitive hardware specs, the software ecosystem and developer mindshare lag significantly. This may shift in coming years but hasn't yet.</p>`
       },
       {
         id: "vram-basics",
@@ -1122,10 +1221,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>If model + KV cache + overhead > VRAM, you crash. You can: quantize, shorten context, smaller batch, or split across multiple GPUs.</p>`,
         model: `VRAM = the GPU's desk. Everything for the current task has to fit on the desk simultaneously. Run out of desk, run out of luck.`,
         mistakes: [
-          "Calculating VRAM only from model size. KV cache and overhead are real.",
-          "Assuming 'fits at startup' = 'fits under load.' Concurrent requests inflate KV cache.",
-          "Forgetting the OS, CUDA runtime, and other processes also reserve some VRAM."
-        ]
+          "Counting only model weights. Add KV cache, activations, and overhead. Real memory use is often 1.5-2x the weight size.",
+          "Buying just enough VRAM. Headroom matters for batch size flexibility and longer context."
+        ],
+        goDeeper: `<p><b>The memory budget for inference.</b> Model weights (the biggest chunk, varies by quantization). KV cache (per-request, scales with context length). Activations (small but non-zero). CUDA framework overhead (1-2GB). Total memory used equals the sum of all of these.</p>
+<p><b>Concrete examples.</b> 7B model at fp16: 14GB weights + about 2GB other = 16GB minimum. Same at Q4: 4GB weights + about 2GB other = 6GB total. 70B model at Q4_K_M with 8k context: about 35GB weights + 5GB KV + 2GB other = about 42GB total. Fits on a 48GB card.</p>
+<p><b>For training, multiply everything by 3-4x.</b> Optimizer states (Adam stores 2 extra copies of the weights). Gradient buffers. Backward-pass activations. So fine-tuning a 7B model needs 40-80GB for full precision. LoRA cuts this dramatically by only training tiny matrices.</p>
+<p><b>The cheap headroom rule.</b> Always buy or rent more VRAM than your model needs. Reasons: longer context windows over time, bigger batches for throughput, future-proof for slightly bigger models. The marginal cost of going from 24GB to 48GB is rarely the binding constraint.</p>`
       },
       {
         id: "latency-quality",
@@ -1143,10 +1245,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>Product question: what is "good enough quality at acceptable latency" for <i>this</i> use case? An autocomplete tolerates 100ms and dumb-but-fast. A medical summary tolerates 10s and demands smart.</p>`,
         model: `Latency and quality are on a slider. Your job is to put the slider at the right place for the product, not at the maximum on either side.`,
         mistakes: [
-          "Optimising for either axis in isolation. Always think product-first.",
-          "Treating latency as a single number. Time-to-first-token, tokens-per-second, and total time all matter differently.",
-          "Forgetting users perceive streaming responses as much faster, even with the same total time."
-        ]
+          "Optimising for the wrong axis. Real-time chat values latency; batch document processing values throughput. Different problems.",
+          "Assuming the biggest model is always 'safer'. For most tasks, a smaller model plus better prompting plus light fine-tuning beats a giant model on a raw call."
+        ],
+        goDeeper: `<p><b>The slider, explicit.</b> Faster + smaller + cheaper ↔ Slower + bigger + more expensive. Every product feature lives somewhere on this slider. Autocomplete: heavy left (must be fast, can be "good enough"). Legal contract review: heavy right (can be slow, must be accurate). Knowing where you are matters more than blindly trying to be in the middle.</p>
+<p><b>Concrete numbers.</b> Llama 3.2 3B at Q4 on a laptop: about 50 tokens/sec, costs nothing per call. GPT-5 on API: about 80 tokens/sec, costs cents per call. Quality gap is real but task-dependent. For many use cases the 3B model is 90% as good for 1% of the cost.</p>
+<p><b>The hybrid pattern.</b> Use a small fast model for the bulk of the work; escalate to a big slow model only when the small one's confidence is low. Modern routing libraries (RouteLLM, Martian) automate this. Often gets you 80% of big-model quality at 20% of the cost.</p>
+<p><b>Where the slider is moving.</b> Models keep getting better at smaller sizes faster than they get cheaper at the high end. Bet on more capability fitting in smaller models over the next 2 years. The "tiny fast" position on the slider is gaining ground.</p>`
       }
     ]
   },
@@ -1163,10 +1268,13 @@ What is 2+2?&lt;|im_end|&gt;
 <p>You'd use it directly when you want maximum control, minimal install, or you're embedding inference into another app.</p>`,
         model: `llama.cpp = the engine. Ollama, LM Studio, and others are dashboards bolted on top of it.`,
         mistakes: [
-          "Trying to run unquantized models on CPU and getting frustrated by the speed. Quantize first.",
-          "Building from source on Windows without setting the right compiler. Just use a prebuilt binary.",
-          "Ignoring the server mode (<code>llama-server</code>). It speaks an OpenAI-compatible API and is great for local apps."
-        ]
+          "Confusing 'llama.cpp' with 'Llama'. llama.cpp is software (a C++ library); Llama is Meta's family of open-source models. The library originally ran only Llama but now runs almost any open model.",
+          "Hand-compiling it. Most users should just install Ollama or LM Studio, which wrap llama.cpp."
+        ],
+        goDeeper: `<p><b>The pioneering open-source project.</b> Started by Georgi Gerganov in 2023 as a weekend project to run Llama on a MacBook in pure C++. It worked. Within months, llama.cpp became the foundation for the entire local-AI ecosystem.</p>
+<p><b>What makes it special.</b> Aggressive use of quantization (GGUF format originated here). Tight CPU and GPU implementations with hand-tuned kernels. No Python overhead. Runs on basically any hardware: Mac (Metal), Linux/Windows (CUDA, ROCm, Vulkan), even Raspberry Pi.</p>
+<p><b>What's built on top.</b> Ollama (the friendliest wrapper). LM Studio (GUI). Jan (open-source GUI). GPT4All (early entrant, still around). KoboldCpp (for creative writing). Most "local AI" apps are llama.cpp underneath with a different UX on top.</p>
+<p><b>Direct usage.</b> <code>./llama-cli -m model.gguf -p "Hello"</code> from the command line. For most users this is too raw — pick Ollama instead unless you're integrating into custom infrastructure.</p>`
       },
       {
         id: "ollama",
@@ -1181,10 +1289,13 @@ ollama list
 ollama serve  # API server</code></pre>`,
         model: `Ollama = "brew install" for LLMs. Friction goes to zero, control goes down a bit. Worth the trade for most local work.`,
         mistakes: [
-          "Using Ollama in production for high throughput. It is not optimised for serving thousands of users; use vLLM for that.",
-          "Forgetting to set a context length. Default is often shorter than you want.",
-          "Confusing the Modelfile (Ollama's customisation file) with full fine-tuning. It only changes prompts and sampling, not weights."
-        ]
+          "Forgetting Ollama needs a model to be downloaded first. <code>ollama pull llama3.2</code> before <code>ollama run llama3.2</code>.",
+          "Using it for high-throughput serving. It's great for desktop use; vLLM is better for production multi-user serving."
+        ],
+        goDeeper: `<p><b>The pitch.</b> Local LLMs without command-line gymnastics. Install Ollama (one binary). Run <code>ollama pull llama3.2</code>. Run <code>ollama run llama3.2</code>. You're chatting with a local LLM in under 2 minutes from a clean machine.</p>
+<p><b>What it provides on top of llama.cpp.</b> Model registry (one-command pulls like Docker). REST API on port 11434 (OpenAI-compatible). Automatic model unloading when idle. Multi-model swapping. Modelfile system for custom configurations.</p>
+<p><b>Default model set.</b> Llama 3.2, Llama 3.1, Mistral, Gemma, Phi, Qwen, plus many others. The library lists hundreds; <code>ollama list</code> shows what's installed locally.</p>
+<p><b>Integration pattern.</b> Point any OpenAI-compatible client at <code>http://localhost:11434/v1</code>. The OpenAI Python SDK works directly. LangChain has native Ollama support. Curl works. This portability is why Ollama dominates local dev.</p>`
       },
       {
         id: "vllm",
@@ -1195,10 +1306,13 @@ ollama serve  # API server</code></pre>`,
 <p>Trade-offs: GPU only (no CPU mode), heavier install than Ollama, picky about model formats (Hugging Face safetensors, AWQ, GPTQ; not GGUF).</p>`,
         model: `vLLM = the production serving engine. Ollama for dev, vLLM for traffic.`,
         mistakes: [
-          "Running vLLM with GGUF and being confused why it errors. Use AWQ or GPTQ instead.",
-          "Underutilising it by sending one request at a time. Its batching shines only with concurrency.",
-          "Ignoring tensor parallelism settings on multi-GPU. Defaults are not always optimal."
-        ]
+          "Confusing vLLM with VLM (vision-language model). The first is an inference server, the second a model type. Same letters, totally different things.",
+          "Running vLLM on consumer hardware for production. It's GPU-server oriented; for laptops use Ollama instead."
+        ],
+        goDeeper: `<p><b>The pitch.</b> "Easy, fast, and cheap LLM serving for everyone." Open-source inference server out of UC Berkeley. Now used by enterprises, AI labs, and most modern open-source AI deployments.</p>
+<p><b>The killer feature: PagedAttention.</b> KV cache is the memory bottleneck in LLM serving. vLLM treats KV cache like virtual memory: paged into and out of GPU memory as needed, shared across requests when possible. Result: 2-10x higher throughput than naive servers.</p>
+<p><b>Continuous batching out of the box.</b> Requests don't wait for batches to fill — they slot into the running batch as soon as a slot opens. New requests join, old ones leave, batch composition is dynamic. This is the difference between "serves 10 users well" and "serves 1000 users well".</p>
+<p><b>OpenAI-compatible API.</b> <code>vllm serve meta-llama/Llama-3.1-8B-Instruct</code> spins up a server on port 8000 with OpenAI's API. Drop in the OpenAI SDK, point at <code>http://localhost:8000/v1</code>, you're serving your own LLM with the exact same client code.</p>`
       },
       {
         id: "mlx",
@@ -1213,10 +1327,13 @@ ollama serve  # API server</code></pre>`,
 <p>For Mac users it is often the fastest local option, beating llama.cpp on the same hardware.</p>`,
         model: `MLX = "PyTorch tuned for Apple Silicon." Unified memory means giant models on laptops without ceremony.`,
         mistakes: [
-          "Trying to run MLX on non-Apple hardware. It only works on Apple Silicon.",
-          "Forgetting that MLX models on Hugging Face are a separate format. Use the <code>mlx-community</code> org.",
-          "Ignoring it because 'Mac.' If you have a Mac with 32GB+ RAM, it is genuinely one of the best local inference paths."
-        ]
+          "Assuming MLX is only for Apple's research. It's general-purpose; the open-source community has built fine-tuning and inference tools on it.",
+          "Comparing MLX speed to Linux+CUDA setups. Different hardware. Compare MLX to PyTorch's Apple Silicon support instead."
+        ],
+        goDeeper: `<p><b>What MLX is.</b> Apple's open-source machine learning framework, designed specifically for Apple Silicon (M-series chips). Released in 2023. Optimised for the unified memory architecture that makes Apple chips unique.</p>
+<p><b>Why Apple Silicon is special for AI.</b> CPU and GPU share the same memory (unified memory). On a 64GB Mac, your model can use up to 64GB of GPU memory effectively — no copying back and forth. A 70B Q4 model that needs a $30k+ datacenter GPU on Linux fits comfortably on a $5k MacBook Pro.</p>
+<p><b>The ecosystem.</b> mlx-lm (the canonical inference library). mlx-vlm (for vision-language models). Hugging Face has thousands of MLX-converted models. Fine-tuning works via mlx-lm's <code>lora</code> command.</p>
+<p><b>The 2025 reality.</b> For local LLM use on a Mac, MLX is usually 1.5-2x faster than llama.cpp's Metal backend. For training, MLX is your only real option on Apple Silicon (CUDA isn't available). If you're a Mac user serious about local AI, you'll touch MLX.</p>`
       },
       {
         id: "huggingface",
@@ -1232,10 +1349,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `Hugging Face = the universal hub. If something AI-related exists, there is a chance you can find or share it here.`,
         mistakes: [
-          "Ignoring model licences. Not every 'open' model is commercially usable. Always check.",
-          "Cloning huge repos with <code>git clone</code>. Use <code>huggingface_hub</code> for selective downloads.",
-          "Treating model cards as decoration. Reading them saves hours of 'why is this model weird' debugging."
-        ]
+          "Treating Hugging Face like just a 'model download site'. It's also a hosting platform, dataset registry, demo space (Spaces), and library ecosystem.",
+          "Skipping the model card. The card tells you what data trained the model, what license it has, what tasks it's good at, and known limitations."
+        ],
+        goDeeper: `<p><b>The platform breakdown.</b> Hub (1M+ models, 200k+ datasets). Transformers (the Python library that runs them). PEFT (fine-tuning library). Datasets (data loading library). TRL (training library for RLHF/DPO). Tokenizers (tokenizer library). Spaces (hosted demos). Inference Endpoints (managed model serving).</p>
+<p><b>The model hub conventions.</b> Each model has: weights file(s), config.json (architecture details), tokenizer files, README.md (the "model card"). Loading is universal: <code>AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.1-8B")</code> works for nearly any model.</p>
+<p><b>The community magic.</b> Anyone can upload a model. Anyone can fork and remix it. Top contributors like "TheBloke" (now retired) and "bartowski" have published thousands of quantized versions of popular models. This decentralized contribution is what made the "open-source AI" wave possible.</p>
+<p><b>Beyond models.</b> Datasets library has every famous open ML dataset. Spaces hosts about 500k free Gradio/Streamlit demos. Inference Endpoints lets you deploy any HF model as a managed API in minutes. The whole ecosystem is interconnected.</p>`
       },
       {
         id: "unsloth",
@@ -1245,10 +1365,13 @@ ollama serve  # API server</code></pre>`,
 <p>It is the easiest way to fine-tune a 7B-70B model on a single consumer or rented GPU. Notebooks are well documented, defaults are sane, and it supports LoRA, QLoRA, DPO, and continued pretraining.</p>`,
         model: `Unsloth = "fine-tuning on easy mode." Same algorithms, faster runtime, fewer footguns.`,
         mistakes: [
-          "Skipping Unsloth and writing raw Transformers training loops. You're paying a 2-3x speed tax for no reason on common workflows.",
-          "Mixing Unsloth-specific code with vanilla Transformers code in ways that break the optimisations.",
-          "Not exporting to GGUF after training when you wanted to run locally."
-        ]
+          "Skipping it for fine-tuning. Unsloth is roughly free quality of life — same outputs, much faster training. No reason not to use it.",
+          "Using it for inference. It's a training-time speedup library. For inference, use vLLM or TGI."
+        ],
+        goDeeper: `<p><b>What it does.</b> Unsloth is a drop-in optimisation for LoRA/QLoRA fine-tuning. Same Python API as Hugging Face's PEFT but the underlying kernels are hand-written CUDA. Result: 2-5x faster training and 50-80% less memory use, with identical model outputs.</p>
+<p><b>How it became dominant.</b> Two-person team. Wrote optimised kernels for the operations that dominate fine-tuning time (attention, MLP forward/backward). Made them work seamlessly through the standard Transformers API. Open-sourced everything.</p>
+<p><b>The free Colab template.</b> Unsloth ships free Google Colab notebooks for fine-tuning Llama, Mistral, Gemma, Phi, Qwen, etc. Free tier Colab (T4 GPU) is enough to fine-tune a 7B model in a few hours. This made fine-tuning genuinely accessible to anyone with a Google account.</p>
+<p><b>Why every fine-tuning tutorial uses it.</b> Faster training means faster iteration means better fine-tunes. The default for most independent ML practitioners and small teams since 2024.</p>`
       },
       {
         id: "axolotl",
@@ -1259,10 +1382,13 @@ ollama serve  # API server</code></pre>`,
 <p>Supports: SFT, DPO, full fine-tuning, LoRA, QLoRA, multi-GPU, FSDP, DeepSpeed, custom datasets, custom chat templates.</p>`,
         model: `Axolotl = "fine-tuning as configuration." If Unsloth is a nice notebook, Axolotl is a serious build pipeline.`,
         mistakes: [
-          "Hand-editing configs until they work and then losing the working version. Commit configs to git.",
-          "Skipping the eval section in the YAML. Without it, you have no idea if training improved anything.",
-          "Treating defaults as optimal. They're sensible, not magic. Tune learning rate and batch size for your job."
-        ]
+          "Trying Axolotl as a beginner. It's powerful but the configuration surface is large. Start with Unsloth's Colab; graduate to Axolotl when you need its features.",
+          "Skipping the YAML. The whole experience is config-driven; understand the YAML before training."
+        ],
+        goDeeper: `<p><b>What Axolotl is.</b> A configuration-driven fine-tuning framework. You write a YAML file describing your training run (base model, dataset, hyperparameters, technique) and Axolotl handles the rest. Built on top of Hugging Face Transformers, TRL, and PEFT.</p>
+<p><b>Why teams pick it.</b> Reproducibility (configs are checked into git). Battle-tested support for many fine-tuning techniques (LoRA, QLoRA, full FT, DPO, ORPO). Distributed training support (FSDP, DeepSpeed). Good defaults that won't blow up.</p>
+<p><b>Typical YAML keys.</b> base_model. datasets (list with format and path). adapter (lora, qlora, or none). sequence_len, micro_batch_size, gradient_accumulation_steps. learning_rate, num_epochs, warmup_steps. save_steps. Plus 50+ optional advanced parameters.</p>
+<p><b>Who actually uses it.</b> Serious open-source fine-tuners. Companies fine-tuning at scale. Anyone training multiple models per week and needing reproducibility. For one-off experiments, Unsloth is faster to start with.</p>`
       },
       {
         id: "peft",
@@ -1276,10 +1402,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `PEFT = the standard library for adapter-based fine-tuning. Most "fine-tune this model" tutorials are PEFT under the hood.`,
         mistakes: [
-          "Targeting the wrong modules in LoRA config. Always check the model's named modules first.",
-          "Forgetting to save the adapter separately from the base model.",
-          "Mixing up <code>PeftModel.from_pretrained</code> (load adapter onto base) with regular Transformers loading."
-        ]
+          "Confusing PEFT (the library) with the concept of parameter-efficient fine-tuning. PEFT is one library; the concept includes many techniques.",
+          "Picking advanced PEFT methods first. LoRA is well-understood and works for 90%+ of use cases. Don't reach for exotic methods without reason."
+        ],
+        goDeeper: `<p><b>The library.</b> Hugging Face PEFT (Parameter-Efficient Fine-Tuning). Provides clean APIs for all major adapter techniques: LoRA, QLoRA, IA3, prefix tuning, prompt tuning, P-tuning. Integrates seamlessly with Transformers and TRL.</p>
+<p><b>The typical workflow.</b> Load base model. Wrap it with a LoraConfig (specifies rank, target modules, alpha). Get a PEFT model. Train with standard Hugging Face Trainer. Save the adapter (small file). At inference, load base plus adapter together.</p>
+<p><b>Why the API matters.</b> Without PEFT, implementing LoRA from scratch is a small project. With PEFT, it's 5 lines of code. This abstraction is what made parameter-efficient fine-tuning a default rather than a research topic.</p>
+<p><b>Adapter merging.</b> PEFT can merge a trained adapter back into the base model weights, producing a single combined model. Useful for deployment: no runtime overhead of separate adapter loading. The downside: you lose the ability to swap adapters dynamically.</p>`
       },
       {
         id: "trl",
@@ -1290,10 +1419,13 @@ ollama serve  # API server</code></pre>`,
 <p>It plays nicely with PEFT, Accelerate, and FSDP for scaling.</p>`,
         model: `TRL = the "preferences and RL" toolkit. Sister library to PEFT in the HF training universe.`,
         mistakes: [
-          "Treating DPOTrainer as a pure replacement for SFTTrainer. You usually SFT first, then DPO.",
-          "Not setting <code>max_length</code> properly. Default truncation can chop your prompts.",
-          "Skipping eval datasets. TRL trainers support them; use them."
-        ]
+          "Treating TRL as for RLHF only. It now covers DPO, ORPO, KTO, SFT, plus most modern alignment methods.",
+          "Diving into PPO before trying DPO. DPO achieves similar results with vastly simpler training."
+        ],
+        goDeeper: `<p><b>The library.</b> Hugging Face's TRL (Transformer Reinforcement Learning). The de facto open-source library for post-training language models with preference data. Powers most of the open-source community's alignment work.</p>
+<p><b>The trainer classes.</b> SFTTrainer (supervised fine-tuning, base case). DPOTrainer (direct preference optimization). PPOTrainer (the original RLHF). ORPOTrainer (combines SFT and preference learning in one step). KTOTrainer (binary feedback, no pairs needed). RewardTrainer (just trains reward models).</p>
+<p><b>Data format expectations.</b> For DPO: dataset columns "prompt", "chosen", "rejected". For SFT: "messages" (chat format) or "text" (raw). For ORPO: same as DPO. The cleanness of these contracts is what makes TRL usable.</p>
+<p><b>What's behind the major model releases.</b> Llama 3's preference training: TRL. Open-source DPO replication of Tulu, Zephyr, NeuralChat: TRL. Most public open-source alignment work in 2024-2025 is TRL-based. The library has become the standard.</p>`
       }
     ]
   },
@@ -1315,10 +1447,13 @@ ollama serve  # API server</code></pre>`,
 </ol>`,
         model: `RAG = open-book exam. The LLM is smart but cluess on your stuff; you give it the right page right before it answers.`,
         mistakes: [
-          "Treating RAG as a single thing. Each step (chunking, embedding, retrieval, reranking, prompting) is independently tunable and breakable.",
-          "Believing 'more context is better.' Past a point, irrelevant chunks distract the model.",
-          "Not evaluating retrieval separately from generation. If retrieval is wrong, no amount of prompt tweaking saves you."
-        ]
+          "Treating RAG as a complete solution. It only retrieves information; the LLM still has to use it correctly. Bad retrieval = bad answer regardless of model.",
+          "Building production RAG without an eval suite. RAG quality is heavily empirical; you can't tune what you don't measure."
+        ],
+        goDeeper: `<p><b>The full pipeline.</b> (1) Indexing: chunk documents, embed each chunk, store vectors in a vector DB. (2) Retrieval: embed the user's question, find the K most similar chunks. (3) Generation: stuff retrieved chunks into the prompt as context, ask the LLM to answer.</p>
+<p><b>Where RAG goes wrong.</b> Chunking strategy (too small loses context, too large dilutes relevance). Embedding model quality (cheap embeddings miss nuance). Top-K choice (too few misses info, too many adds noise). Retrieval relevance (semantic similarity isn't always what you want). Prompt structure (how chunks are presented matters).</p>
+<p><b>Common improvements.</b> Reranker: take top-50 with cheap embeddings, rerank to top-5 with expensive cross-encoder. Hybrid search: combine semantic (embeddings) with keyword (BM25). Query expansion: have the LLM rewrite the query before retrieval. Filtering: only retrieve from chunks matching metadata (date, source, type).</p>
+<p><b>When NOT to use RAG.</b> The information is in the model's training data and stable. The query is simple enough that the LLM doesn't need supporting docs. The corpus is small (under 50 docs — just put it all in context if the model has long context).</p>`
       },
       {
         id: "vector-dbs",
@@ -1335,10 +1470,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `Vector DB = a Google for meaning. Index meanings; query by meaning; get back the closest matches.`,
         mistakes: [
-          "Adopting a 'real' vector DB before you need one. pgvector or even a numpy array covers small projects.",
-          "Ignoring metadata filters. Pure semantic search is rarely enough; combine with structured filters (date, author, tag).",
-          "Forgetting to re-embed when you change embedding models. Embeddings from different models are not comparable."
-        ]
+          "Choosing a vector DB before knowing your data scale. Small corpus? Just use FAISS in-memory or pgvector. Vector DB infra has real complexity costs.",
+          "Treating vector DB as the source of truth. It's a derived index. Keep your authoritative docs in normal storage."
+        ],
+        goDeeper: `<p><b>The decision tree.</b> Under 10k vectors: FAISS in-memory, or pgvector if you have Postgres. 10k-1M: Chroma, Qdrant, or pgvector. 1M-100M: Pinecone, Weaviate, Qdrant. 100M+: Milvus, Vespa, or specialised infrastructure. Don't overshoot — vector DBs add operational complexity.</p>
+<p><b>How they work.</b> Approximate nearest neighbor (ANN) algorithms like HNSW or IVF. Trade exact correctness for sub-millisecond query time. Most queries get the right top-K despite the approximation.</p>
+<p><b>The hosted vs self-hosted choice.</b> Pinecone, Weaviate Cloud, Qdrant Cloud: pay per usage, zero ops. Self-hosted Qdrant or Weaviate: lower per-query cost, you run the cluster. pgvector: use your existing Postgres, simplest path. Choose based on whether you want ops as a feature or a cost.</p>
+<p><b>What goes in alongside the vector.</b> Metadata for filtering (source, date, type, user_id). Original text (so you don't need a separate lookup). Embedding model version (so you can re-embed when models change). Trace IDs (for evals later).</p>`
       },
       {
         id: "chunking",
@@ -1355,10 +1493,13 @@ ollama serve  # API server</code></pre>`,
 <p>Rule of thumb: 200-800 tokens per chunk, 10-20% overlap. Tune with eval.</p>`,
         model: `Chunking = cutting a long book into index cards. Cards too small lose context, cards too big bury the answer.`,
         mistakes: [
-          "Splitting mid-sentence. Always respect natural boundaries.",
-          "Choosing chunk size by intuition only. Evaluate retrieval recall at different sizes.",
-          "Ignoring document structure. A PDF with headings should chunk along the headings."
-        ]
+          "Picking a chunk size and forgetting it. Different document types need different chunking strategies.",
+          "Splitting in the middle of important content. Use semantic boundaries (headings, paragraphs, sentences) when possible."
+        ],
+        goDeeper: `<p><b>The size question.</b> Too small (under 200 tokens): each chunk loses context. Too big (over 1500 tokens): retrieval becomes coarse, irrelevant content gets stuffed into prompts. Sweet spot for most: 300-800 tokens per chunk with some overlap (50-100 tokens).</p>
+<p><b>Strategies, ranked.</b> Fixed-size: simplest, often acceptable. Recursive splitting: split by paragraphs, then sentences if too big, then characters if still too big. Semantic chunking: use an embedding model to detect semantic breaks. Markdown-aware: respect heading hierarchy. Document-aware: each PDF page is a chunk, each Slack message is a chunk.</p>
+<p><b>The overlap trick.</b> Have chunks overlap by 10-20%. If a sentence happens to be at a chunk boundary, both chunks contain it. Slight increase in storage cost, big improvement in retrieval coherence.</p>
+<p><b>What kills RAG most often.</b> Bad chunking. Bigger improvements often come from better chunking than from better embeddings or better models. Don't skip iterating on this.</p>`
       },
       {
         id: "retrieval-pipelines",
@@ -1375,10 +1516,13 @@ ollama serve  # API server</code></pre>`,
 <p>Each stage adds latency but boosts quality. Tune the slider for your product.</p>`,
         model: `Retrieval pipeline = a librarian's workflow. Understand the question, search shelves multiple ways, pull a stack, prune to the best, hand to the reader.`,
         mistakes: [
-          "Skipping reranking. It is often the highest-ROI single improvement after basic RAG.",
-          "Tuning end-to-end metrics only. You also need per-stage metrics (recall@k for retrieval, precision after rerank).",
-          "Letting query rewriting hallucinate. Constrain it tightly."
-        ]
+          "Confusing retrieval pipeline with vector search. Vector search is one step; the full pipeline includes query rewriting, filtering, and reranking.",
+          "Skipping observability. Log every retrieval — query, retrieved chunks, scores. Without this, you can't debug bad answers."
+        ],
+        goDeeper: `<p><b>A real-world retrieval pipeline.</b> (1) Query preprocessing: spell correction, language detection. (2) Query rewriting: have an LLM rephrase ambiguous queries, or generate multiple variants. (3) Filtering: apply metadata filters (this user's docs only, recent docs only). (4) First-pass retrieval: vector search returns top 50. (5) Reranking: cross-encoder reranks to top 5. (6) Prompt assembly: structure the chunks into the system prompt.</p>
+<p><b>HyDE (Hypothetical Document Embeddings).</b> A clever pattern: have the LLM generate a hypothetical answer to the query, then embed that for retrieval (not the query). The hypothetical answer is more similar in style to your documents than the question is. Often improves retrieval quality noticeably.</p>
+<p><b>Multi-query retrieval.</b> Have the LLM generate 3-5 variants of the query. Run retrieval for each. Take the union. Deduplicate. Better recall at modest cost.</p>
+<p><b>What to log.</b> Every query, the chunks retrieved, their scores, the chunks used in the prompt, the final answer. When users complain, you can replay the pipeline and see exactly which step went wrong. Without this you're flying blind.</p>`
       },
       {
         id: "ai-memory",
@@ -1395,10 +1539,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `AI memory = the notebook outside the LLM that gets handed in at the start of every new conversation.`,
         mistakes: [
-          "Stuffing every past message into the prompt. Costs scale, latency grows, quality often drops.",
-          "Letting the model write to memory without constraints. It will write hallucinations into permanent state.",
-          "Mixing short-term and long-term memory in one bucket. They need different rules."
-        ]
+          "Treating context window as memory. The context window is short-term and ends with the conversation. Real memory persists.",
+          "Building memory before you need it. Most products survive fine with no memory beyond the current session. Don't add complexity prematurely."
+        ],
+        goDeeper: `<p><b>The three memory tiers.</b> Short-term: current conversation in context. Session: persisted across the day or week. Long-term: across months or forever. Each needs different storage and retrieval.</p>
+<p><b>The dominant pattern in 2025.</b> Extract facts after each conversation ("user prefers concise replies", "user is allergic to dairy"). Store as embeddings plus metadata. Retrieve relevant facts when starting a new conversation. Inject into system prompt. ChatGPT, Claude, and most personal-assistant products work this way.</p>
+<p><b>Where it breaks.</b> Fact extraction misses important things. Stored facts conflict with new info (does "I love pizza" from 2 years ago still apply?). Retrieving the wrong facts pollutes the system prompt. Over-confident memory ("the user definitely said X") leads to embarrassing errors.</p>
+<p><b>What "real" memory might look like.</b> Active research area. Probably involves: structured knowledge graphs of user facts, time-stamped beliefs with confidence scores, periodic reconciliation by the model itself. None of this is solved yet; current systems are crude approximations.</p>`
       },
       {
         id: "semantic-search",
@@ -1409,10 +1556,13 @@ ollama serve  # API server</code></pre>`,
 <p>Implementation: embed all docs, embed the query, return the docs with highest cosine similarity. Add reranking, hybrid search, and metadata filters for production.</p>`,
         model: `Semantic search = "find me documents that mean the same thing," not "find me documents that say the same thing."`,
         mistakes: [
-          "Replacing keyword search entirely. Hybrid is almost always better than either alone.",
-          "Using English-only embeddings on multilingual data.",
-          "Forgetting that semantic search returns 'similar', not 'correct'. Always rerank or verify for high-stakes tasks."
-        ]
+          "Replacing keyword search with semantic search entirely. Hybrid usually beats either alone. Keep both, combine scores.",
+          "Tuning embeddings without changing the index. Embedding upgrades require re-indexing all your content."
+        ],
+        goDeeper: `<p><b>The "meaning" insight.</b> Keyword search (BM25, lexical) matches words exactly. Semantic search matches meaning. "How do I unsubscribe?" might semantically match "cancel my account" even though no words overlap. This single capability transforms search quality.</p>
+<p><b>Where it shines.</b> User questions phrased differently from your docs. Synonyms. Conceptual searches. Cross-lingual search. Long-tail queries that exact-match doesn't handle. Most modern site search is now hybrid (semantic plus keyword combined).</p>
+<p><b>Hybrid search in practice.</b> Run both BM25 (keyword) and vector (semantic) retrieval. Combine via reciprocal rank fusion (RRF) or weighted score averaging. Almost always beats either alone, especially for queries that mix exact terms and conceptual descriptions.</p>
+<p><b>The embedding model choice.</b> OpenAI text-embedding-3-small (fast and cheap). text-embedding-3-large (better but pricier). BGE family (open, very competitive). Cohere embed-multilingual-v3 (multilingual leader). Try one, measure on your data, iterate.</p>`
       }
     ]
   },
@@ -1436,10 +1586,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `Prompt engineering = managing a smart, eager, slightly-careless intern. Be clear, be specific, show examples, set boundaries.`,
         mistakes: [
-          "Treating prompts as throwaway. Production prompts deserve version control and tests.",
-          "Adding 'be accurate' or 'do not hallucinate' and expecting magic. Those phrases barely help; structure and grounding do.",
-          "Optimising on one example. Always test on a small, varied set."
-        ]
+          "Treating prompts as 'one and done'. Iterate. Test with diverse inputs. What works for one example often breaks on another.",
+          "Conflating prompt engineering with prompt magic. Clear instructions plus examples plus structure beats clever incantations."
+        ],
+        goDeeper: `<p><b>The patterns that actually work.</b> Be specific about format ("respond in JSON with keys X, Y, Z"). Provide examples (few-shot beats zero-shot for most tasks). Specify constraints ("do not include disclaimers"). Set the role briefly ("you are a senior tax accountant"). Use markdown structure (the model parses it well).</p>
+<p><b>Chain-of-thought.</b> "Let's think step by step" or "reason through this carefully before answering" improves performance on reasoning tasks. For modern reasoning models (o1, Claude Sonnet 4), this is partially baked in; for older or smaller models, it still helps.</p>
+<p><b>Anti-patterns.</b> Over-long prompts ("please please please be careful"): mostly counterproductive. Telling the model what NOT to do without saying what to do: it doesn't reliably follow negatives. Mixing instructions and data without clear separators: confuses the model.</p>
+<p><b>How real teams improve prompts.</b> Build an eval set (20-50 representative inputs with expected outputs). Try a prompt variant. Score against the eval. Pick the winner. Iterate. Most "prompt engineering" is empirical experimentation, not artistic inspiration.</p>`
       },
       {
         id: "system-prompts",
@@ -1457,10 +1610,13 @@ ollama serve  # API server</code></pre>`,
 <p>It is loaded once and shared across all turns of the conversation. Keep it tight; every token costs.</p>`,
         model: `System prompt = the model's job description. Read at the start of every shift, applied to every interaction.`,
         mistakes: [
-          "Putting dynamic info in the system prompt. It rarely needs to change per request.",
-          "Making it 3,000 tokens long. Long system prompts dilute attention. Aim for 500 or less.",
-          "Assuming system prompts are unbreakable. They are stronger but not magic. Prompt-injection attacks still happen."
-        ]
+          "Putting things in the user prompt that belong in the system prompt. The system prompt is for stable instructions; user prompts are for the actual request.",
+          "Forgetting that long system prompts cost tokens on every call. Trim ruthlessly."
+        ],
+        goDeeper: `<p><b>The role.</b> System prompts are persistent instructions sent before any user message. They set the model's personality, role, constraints, output format, tools available, and edge-case behaviours. Modern chat APIs (OpenAI, Anthropic, etc.) all support them as a first-class concept.</p>
+<p><b>Structure that works.</b> Role/identity first ("You are a coding assistant"). Capabilities and limits second ("You can use these tools... You should never..."). Output format third ("Always respond with..."). Edge cases last ("If asked about X, do Y"). Markdown sections help the model navigate.</p>
+<p><b>Length tradeoffs.</b> Short system prompts (50-200 tokens): cheap, may miss edge cases. Medium (200-800): the sweet spot for most products. Long (1000+): expensive at scale, often diminishing returns, but necessary for complex products with many rules.</p>
+<p><b>Examples in the wild.</b> Leaked system prompts from ChatGPT, Claude, Cursor, Replit show real production patterns. Most include: identity, current date, refusal patterns, tool definitions, formatting rules, safety considerations. Worth reading for inspiration.</p>`
       },
       {
         id: "tool-calling",
@@ -1477,10 +1633,13 @@ ollama serve  # API server</code></pre>`,
 </ol>`,
         model: `Tool calling = the model files a work request. You fulfil it. The model continues with the answer.`,
         mistakes: [
-          "Vague tool descriptions. The model picks tools based on descriptions; bad descriptions = wrong tool choices.",
-          "Too many tools. Past 10-20, accuracy drops. Group or filter dynamically.",
-          "Trusting model arguments blindly. Validate before executing. Same as any user input."
-        ]
+          "Defining too many tools. Models get confused with 10+ tools. Group related actions; keep tool count under about 10.",
+          "Poor tool descriptions. The model reads the descriptions to decide when to call each. Bad descriptions equal wrong tools called."
+        ],
+        goDeeper: `<p><b>The schema standard.</b> Tools are described as JSON Schema: name, description, parameters (each with type and description), required fields. OpenAI, Anthropic, and the open-source ecosystem mostly agree on the format now.</p>
+<p><b>How models decide to call tools.</b> The model receives the tool list in the system prompt. For each user turn, it decides: respond directly OR call a tool. If calling, it outputs structured JSON with the tool name and arguments. The runtime executes it and returns the result.</p>
+<p><b>Common tool categories.</b> Information retrieval (search, RAG queries, file reads). Computation (calculator, code execution, data analysis). Actions (send email, create calendar event, file edit). User interface (display image, render form). Most production agents have 3-7 tools across these categories.</p>
+<p><b>The description-quality multiplier.</b> A tool called "search_documents" with description "Searches" will get called for everything. The same tool with "Searches the company's internal documentation for product specs, troubleshooting guides, and feature descriptions. Use this when the user asks how a product works or how to do something with it." gets called appropriately. Descriptions are most of the engineering.</p>`
       },
       {
         id: "function-calling",
@@ -1491,10 +1650,13 @@ ollama serve  # API server</code></pre>`,
 <p>Subtle difference in practice: "function calling" often implies one call at a time; "tool calling" frameworks usually support multiple parallel tool calls per turn.</p>`,
         model: `Function calling = tool calling, vintage 2023. Same thing, slightly older vocabulary.`,
         mistakes: [
-          "Treating function calling as a separate skill from tool calling. It isn't.",
-          "Designing functions with too many parameters. Models do better with focused, narrow signatures.",
-          "Returning huge unstructured text from a function. Return structured data the model can parse."
-        ]
+          "Treating 'function calling' and 'tool calling' as different things. They're the same concept; OpenAI introduced 'function calling' first, Anthropic standardised on 'tool use', the terms now overlap.",
+          "Forgetting to validate function arguments. The model can produce malformed JSON or arguments that don't match the schema. Validate before executing."
+        ],
+        goDeeper: `<p><b>The history.</b> OpenAI introduced "function calling" in June 2023 as a structured way for models to invoke developer-defined functions. Anthropic launched "tool use" a year later. By 2025, the concepts are unified across providers, though terminology varies.</p>
+<p><b>The structured output.</b> Behind the scenes, function calling is a model fine-tuned to produce JSON in a specific format. The provider's API gives the model your function schemas; the model outputs JSON when it decides to call one. Robust because it's not relying on the model to format JSON ad-hoc — it's a trained behaviour.</p>
+<p><b>Validation matters.</b> Even with structured outputs, the model can produce JSON that's technically valid but semantically wrong: a string where you expected a number, a missing required field, an extra unexpected field. Always validate the parsed arguments against your schema before executing.</p>
+<p><b>The connection to agents.</b> Tool calling is the mechanism that makes agents possible. Without it, an agent can only output text; you'd need fragile regex parsing to extract intended actions. With it, the agent outputs structured intent that you can execute reliably.</p>`
       },
       {
         id: "ai-agents",
@@ -1541,10 +1703,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `Agentic workflow ladder: simple chain → routing → parallel → orchestrator → autonomous. Pick the lowest rung that gets the job done.`,
         mistakes: [
-          "Jumping straight to autonomous agents. Most production wins come from boring chains and routing.",
-          "Over-engineering. If a single prompt with tools works, use it.",
-          "Not measuring per-step quality. A bad early step poisons everything downstream."
-        ]
+          "Confusing 'agentic workflow' with 'AI agent'. Workflows are typically pre-defined chains; agents are more autonomous loops.",
+          "Building complex workflows when simple ones suffice. Most production AI features are 3-5 step workflows, not free-form agents."
+        ],
+        goDeeper: `<p><b>The spectrum.</b> Fixed pipeline (deterministic, simple): retrieve → summarise → format. LLM-routed pipeline: LLM decides which of N predefined paths to take. Loop-with-tools (agentic workflow): LLM in a controlled loop with specific tools and clear exit conditions. Free-form agent: LLM with general tools, runs until task complete.</p>
+<p><b>Anthropic's effective agents pattern.</b> Their 2024 post "Building effective agents" categorised most production patterns: prompt chaining (each LLM call's output feeds the next). Routing (classify, then dispatch). Parallelisation (run multiple LLM calls, aggregate). Orchestrator-workers (a manager LLM delegates to specialist LLMs). Most useful patterns are workflows, not full agents.</p>
+<p><b>Why workflows beat free-form agents in production.</b> Predictable cost. Predictable latency. Easier to debug. Easier to test. Easier to evaluate. Free-form agents are powerful for open-ended tasks but expensive and hard to control. Most product use cases don't actually need full autonomy.</p>
+<p><b>The frameworks.</b> LangGraph (state machines for LLM workflows). LlamaIndex Workflows. CrewAI (multi-agent). Pydantic AI (typed agents). Each has strengths; most teams pick one and stick with it.</p>`
       },
       {
         id: "multi-agent",
@@ -1555,10 +1720,13 @@ ollama serve  # API server</code></pre>`,
 <p>Honest take: multi-agent is often slower, more expensive, and only marginally better than a well-designed single agent with the right tools. Use it when roles really do need different prompts, different models, or parallelism beats serialism. Avoid it when a single agent could do the same with cleaner logic.</p>`,
         model: `Multi-agent = a small team of LLMs. More heads, more cost, more coordination overhead, sometimes more quality.`,
         mistakes: [
-          "Building a 5-agent system for a problem one prompt would solve.",
-          "Letting agents chat freely without structure. They will go in circles.",
-          "Ignoring cost. Each agent burns tokens; conversations between them multiply."
-        ]
+          "Building multi-agent systems for tasks a single agent (or pipeline) could solve. The coordination overhead is real.",
+          "Skipping shared state design. Two agents talking past each other waste tokens. Design how they share information explicitly."
+        ],
+        goDeeper: `<p><b>The basic patterns.</b> Hierarchical: one manager agent delegates to specialist sub-agents. Sequential: each agent's output feeds the next. Debate: multiple agents argue and converge. Parallel-aggregator: agents work simultaneously, one combines results. Most systems are hybrids.</p>
+<p><b>When it shines.</b> Tasks with distinct sub-skills (write code + review code + test code). Tasks needing diverse perspectives (critic + creative + judge). Large codebases where context windows can't hold everything. Long-running research tasks with structured phases.</p>
+<p><b>When it doesn't.</b> Tasks a single agent can handle (you're paying coordination overhead for nothing). Quick tasks (multi-agent overhead crushes latency). Tasks where you can't clearly decompose roles (you'll end up with overlapping agents that step on each other).</p>
+<p><b>The cost reality.</b> Multi-agent systems typically use 3-10x more tokens than equivalent single-agent solutions. For high-quality outputs on hard problems this can be worth it. For routine tasks it's pure waste. Plan unit economics accordingly.</p>`
       },
       {
         id: "browser-agents",
@@ -1574,10 +1742,13 @@ ollama serve  # API server</code></pre>`,
 <p>Real-world: think Browserbase, Stagehand, Browser-Use, Operator, Claude in Chrome. Big unlocks: tasks that require a real login, tasks behind anti-bot defences, tasks with no public API.</p>`,
         model: `Browser agent = a robot intern with a mouse and keyboard, doing computer tasks for you while you watch (or don't).`,
         mistakes: [
-          "Underestimating brittleness. UIs change; agents break.",
-          "Giving agents access to your real accounts without sandboxing. Sessions can be hijacked, prompt injections can drain things.",
-          "Skipping observability. You need full action logs and replay, not just final outputs."
-        ]
+          "Trusting browser agents with critical actions. They are fragile. Always have human review for irreversible steps.",
+          "Building one from scratch. Tools like Browser Use, Anthropic Computer Use, and Playwright handle the browser plumbing — use them."
+        ],
+        goDeeper: `<p><b>The architecture.</b> Browser (real Chrome via Playwright, or a virtual one). Screenshot tool (captures the current page). LLM with vision (sees the screenshot, decides next action). Action executor (clicks, types, scrolls based on coordinates or selectors). Loop until task complete or limits hit.</p>
+<p><b>The leading examples.</b> Browser Use (open-source, Python, very capable). Anthropic Computer Use (full desktop control, not just browser). OpenAI Operator (consumer-facing product). Cursor's web search agents. Each is roughly the same shape; the differences are in reliability and supported sites.</p>
+<p><b>What they're good at.</b> Filling forms, navigating multi-step flows, scraping information across pages, basic comparison shopping, calendar booking. Anything a human could do clicking around a website, slowly and with some errors.</p>
+<p><b>What they're bad at.</b> Captchas (intentionally blocking). Sites that detect and ban automation. Complex multi-tab workflows. Anything requiring precise timing. Sites with dynamic content that changes between screenshots. Production reliability is still the open problem.</p>`
       }
     ]
   },
@@ -1594,10 +1765,13 @@ ollama serve  # API server</code></pre>`,
 <p>Use cases: chart understanding, screenshot QA, document OCR-like extraction, UI navigation, accessibility (describing images), multimodal RAG.</p>`,
         model: `VLM = an LLM with extra eyes. Sees a picture, treats it as just more tokens, talks about it.`,
         mistakes: [
-          "Sending huge images. They get downsampled; tiny details vanish. Crop and zoom first.",
-          "Assuming VLMs do precise pixel-level tasks well. Counting, OCR on small text, fine spatial reasoning are weak spots.",
-          "Forgetting input-token cost: an image is often 1k-3k tokens."
-        ]
+          "Assuming VLMs are just LLMs with eyes. They're trained differently and have different failure modes. Test on your actual visual tasks.",
+          "Expecting precision on positional or geometric questions. Most VLMs are weak at 'how many', 'left vs right', 'pixel positions'."
+        ],
+        goDeeper: `<p><b>The architecture.</b> A vision encoder (typically a Vision Transformer) processes the image into tokens. A connector layer (often a small MLP) maps image tokens into the LLM's embedding space. The LLM processes them alongside text tokens. The image becomes part of the prompt.</p>
+<p><b>The 2025 leaders.</b> GPT-4o, GPT-5, Claude Sonnet 4.5 (closed). Llama 3.2 Vision, Pixtral, Qwen2.5-VL, InternVL3 (open). Capability differences are real: top closed models still lead on complex visual reasoning, but open models are catching up fast.</p>
+<p><b>What they're great at.</b> Describing images. OCR on screenshots. Reading charts. Identifying objects. Understanding diagrams. UI element identification. Document understanding (PDFs, forms).</p>
+<p><b>Where they struggle.</b> Counting more than a handful. Precise spatial reasoning ("what's directly to the right of..."). Optical illusions. Very small text. Time series detail in charts. Always test on your specific visual task; benchmarks rarely predict real-world performance.</p>`
       },
       {
         id: "slms",
@@ -1614,10 +1788,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `SLM = specialist. Knows less in general, can be sharpened to be excellent at one thing, fits anywhere.`,
         mistakes: [
-          "Throwing an SLM at open-ended reasoning. It'll struggle. Use big models for hard reasoning, SLMs for narrow execution.",
-          "Comparing SLM vs LLM head-to-head without fine-tuning the SLM. Unfair fight.",
-          "Ignoring the cost angle. At 10k queries/day, the SLM savings dominate any quality difference for routine tasks."
-        ]
+          "Equating 'small' with 'cheap and bad'. Many SLMs match much larger models on focused tasks.",
+          "Always reaching for the biggest model. For high-volume tasks, a fine-tuned SLM beats GPT-4 on cost-quality."
+        ],
+        goDeeper: `<p><b>What "small" means in 2025.</b> 1B-10B parameters. Used to mean "much worse". Now means "often surprisingly close, way cheaper, runs anywhere". The gap with frontier models has shrunk dramatically.</p>
+<p><b>The current standouts.</b> Phi-3 Mini (3.8B, Microsoft). Llama 3.2 3B. Gemma 2 2B. Qwen 2.5 3B. Apple Foundation Models (3B, on-device). DeepSeek-V2-Lite. Each punches above its weight on specific task types.</p>
+<p><b>Why size matters less than expected.</b> Better training recipes (Phi's "textbook quality" data). More efficient architectures (better attention, MoE). Smarter distillation from larger models. Targeted fine-tuning. The result: a well-trained 3B model can match a poorly-trained 70B for many tasks.</p>
+<p><b>Where SLMs are headed.</b> On-device: phones, laptops, embedded devices. High-throughput backend: route 80% of traffic to a fine-tuned 3B, save GPT-5 for the hard 20%. Privacy-sensitive: data never leaves the device. The economic and architectural advantages compound over time.</p>`
       },
       {
         id: "dense-models",
@@ -1627,10 +1804,13 @@ ollama serve  # API server</code></pre>`,
 <p>Trade-off: doubling parameters roughly doubles compute and memory. That makes scaling expensive past a point.</p>`,
         model: `Dense model = every neuron fires on every token. Maximum participation, maximum cost.`,
         mistakes: [
-          "Assuming 'dense' is the default term you need to use. Mostly it is only used to contrast with MoE.",
-          "Equating 'dense parameters' with 'MoE parameters'. A 70B dense ≠ 70B MoE in compute use.",
-          "Picking dense in 2026 by reflex when MoE alternatives might be better for the same VRAM."
-        ]
+          "Comparing dense and MoE param counts directly. A 70B dense and a 70B MoE model have very different cost profiles.",
+          "Assuming dense is 'old'. The simplicity advantage is real; dense models are still common, especially for sub-30B sizes."
+        ],
+        goDeeper: `<p><b>What "dense" means.</b> For every input token, every parameter in the model is used. Compute scales with model size. Memory bandwidth scales with model size. Simple, predictable, expensive.</p>
+<p><b>Why dense models dominate small sizes.</b> Below about 30B parameters, the routing overhead of MoE outweighs the efficiency gain. Llama 3.2 3B, Phi-3 Mini, Gemma 2B: all dense. The MoE architecture really pays off at 40B+ total parameters.</p>
+<p><b>The serving simplicity.</b> Dense models have predictable memory use, predictable latency, predictable batching behaviour. No "expert routing" to debug. No memory spikes when an unexpected combination of experts gets called. For production reliability, dense is often easier even when MoE is technically more efficient.</p>
+<p><b>The frontier comparison.</b> Llama 3.1 405B (dense): one giant unified model. GPT-4 (rumored MoE, around 1.7T total / 280B active): much bigger total but similar active params. The gap in compute cost per inference is smaller than the gap in total parameters suggests.</p>`
       },
       {
         id: "moe",
@@ -1642,10 +1822,13 @@ ollama serve  # API server</code></pre>`,
 <p>Catch: you still need VRAM to hold all experts. Speed wins, memory doesn't.</p>`,
         model: `MoE = a building full of specialists. Each question rings just two of them. The whole staff is paid (memory), but only two work per call (compute).`,
         mistakes: [
-          "Confusing 'active params' with 'total params' when budgeting VRAM. You need memory for total, compute for active.",
-          "Assuming all experts are equally good. Some get used way more than others; routing isn't perfectly balanced.",
-          "Comparing MoE vs dense on parameter count alone. Cost-per-token is the more honest comparison."
-        ]
+          "Counting MoE total parameters as 'the model size'. Active parameters per token is what matters for inference cost.",
+          "Assuming MoE always wins. Routing overhead exists. For models under 30B total, dense is usually cleaner."
+        ],
+        goDeeper: `<p><b>The core idea.</b> Instead of one giant model where every parameter activates for every token, MoE models have N "expert" sub-networks. For each token, a "router" picks K experts to activate (usually K=1 or K=2). Total params can be huge while active params per token stays manageable.</p>
+<p><b>The maths example.</b> Mixtral 8x7B has 8 experts of 7B each = 56B total parameters. Per token, 2 of the 8 experts activate = 14B active params (with some shared layers). So it costs roughly like a 13B dense model to run but has the capacity of a 47B dense model.</p>
+<p><b>The frontier shift.</b> Most frontier models in 2024-2025 are MoE: rumored GPT-4 architecture, DeepSeek-V3 (671B total / 37B active), confirmed Mixtral, Qwen-MoE variants. The "big model that's cheap to run" is now the standard frontier shape.</p>
+<p><b>The trade-offs.</b> Pros: capacity per inference dollar, scales further before hitting compute walls, sparse activations. Cons: memory pressure (all experts must be loaded, not just active ones), routing instability during training, harder to fine-tune cleanly, more complex serving.</p>`
       },
       {
         id: "coding-models",
@@ -1662,10 +1845,13 @@ ollama serve  # API server</code></pre>`,
 <p>Use them as the brain behind autocomplete (Cursor, Copilot), agentic coders (Claude Code, Aider), and code review bots.</p>`,
         model: `Coding model = an LLM that grew up reading repositories. Knows syntax, idioms, error patterns, but can still hallucinate APIs.`,
         mistakes: [
-          "Trusting generated code without running it. Hallucinated function names happen even in 2026.",
-          "Treating all coding models as equal. Each has language specialisations; check benchmarks for your stack.",
-          "Forgetting that smaller coding models (3B-7B) are great for autocomplete latency, not for whole-feature generation."
-        ]
+          "Treating 'coding model' as a binary. Each coding model has strengths: some are great at completion, others at agentic workflows, others at language-specific work.",
+          "Comparing them via raw benchmarks only. Real coding utility includes IDE integration, latency, and reliability — not just HumanEval scores."
+        ],
+        goDeeper: `<p><b>The 2025 leaders.</b> Closed: GPT-5, Claude Sonnet 4.5, Gemini 2.5 Pro. Open: Qwen2.5-Coder (all sizes), DeepSeek-Coder-V2, Codestral. Specialty: Devstral (agent-oriented), GLM-4 (also strong).</p>
+<p><b>What "coding model" training adds.</b> Heavy weighting on code in pretraining data. Fine-tuning on millions of high-quality code completions. Fill-in-the-middle training (predict middle of file given prefix and suffix). Repository-level context training. Tool-use training. Each adds capability for code-specific use cases.</p>
+<p><b>The integration that matters.</b> Cursor uses Claude Sonnet 4.5 mainly. GitHub Copilot uses GPT and Anthropic models. Continue.dev lets you pick. Tab completion needs ultra-low latency (smaller models, often distilled). Agentic refactoring needs reasoning (bigger, slower, smarter).</p>
+<p><b>The benchmark caveat.</b> HumanEval and similar are saturated (most modern models hit 90%+). Real differentiation is on: large-codebase navigation, multi-file edits, debugging-style problems, framework-specific tasks. SWE-bench is a better signal but harder to run.</p>`
       },
       {
         id: "reasoning-models",
@@ -1676,10 +1862,13 @@ ollama serve  # API server</code></pre>`,
 <p>Most are RL-trained on verifiable problems where the answer can be auto-checked, which lets them learn to reason without huge labelled datasets.</p>`,
         model: `Reasoning model = a model that gets to "think out loud" privately before speaking. Trades latency for accuracy on hard problems.`,
         mistakes: [
-          "Defaulting to reasoning models for everything. They're slow and pricey on tasks that don't need them.",
-          "Not budgeting for the extra tokens. Reasoning traces can be 10x the final answer length.",
-          "Believing reasoning = always correct. They still hallucinate; they just hallucinate with more confidence and steps."
-        ]
+          "Using a reasoning model for everything. They're slow and expensive. Use them when you actually need step-by-step thinking.",
+          "Hiding the reasoning trace. Sometimes you want to show users that the model is thinking; sometimes you don't. Decide deliberately."
+        ],
+        goDeeper: `<p><b>What "reasoning" models actually do.</b> They've been trained (via reinforcement learning) to produce long internal "reasoning" traces before their final answer. The trace explores possibilities, catches mistakes, and refines the response. This costs many more tokens but produces better answers on hard problems.</p>
+<p><b>The 2025 leaders.</b> OpenAI o1, o3 (closed). Claude Sonnet 4.5 thinking mode. Gemini 2.0 Flash Thinking. DeepSeek R1 (open). QwQ-32B (open). The open-source side has caught up significantly.</p>
+<p><b>Where they shine.</b> Mathematical problems. Complex code generation. Logical puzzles. Multi-step planning. Anything where "thinking more" actually helps. They typically score 20-50 percentage points higher than equivalent non-reasoning models on math and competitive coding benchmarks.</p>
+<p><b>The cost-latency reality.</b> A reasoning response might use 5,000-50,000 tokens of internal thinking, vs 200-1,000 for a normal response. Translation: 10-50x cost and 5-30x latency. Use them surgically, not as defaults.</p>`
       }
     ]
   },
@@ -1696,10 +1885,13 @@ ollama serve  # API server</code></pre>`,
 <p>Tooling: Ollama, LM Studio, Jan, llama.cpp, MLX, vLLM (for a local server).</p>`,
         model: `Local inference = bring the model to the data, not the data to the model. Your laptop becomes the AI provider.`,
         mistakes: [
-          "Picking the biggest model your hardware allows and hoping for the best. Pick the smallest that solves the task.",
-          "Ignoring thermal throttling on laptops. Long sessions can halve speeds.",
-          "Forgetting that 'local' for a team often means a shared internal server, not literally every laptop."
-        ]
+          "Confusing 'local' with 'on this exact device'. Local can mean your laptop, your server rack, or your VPC.",
+          "Reaching for local when API would do. The API is often cheaper for low/medium volume despite costing per call."
+        ],
+        goDeeper: `<p><b>The trade-offs spelled out.</b> Local pros: data privacy (nothing leaves your control), no per-call API fees, no rate limits, no vendor lock-in, full customisation (fine-tuning, custom prompts). Local cons: hardware capex/opex, ops burden, slower iteration on model upgrades, often lower quality than frontier APIs.</p>
+<p><b>The break-even maths.</b> Cloud GPU rental: about $2/hour for an A100, about $5/hour for an H100. At 50 tokens/sec sustained, that's about $0.02 per 1k tokens — similar to GPT-4o-mini's API price. At low utilisation, the API is cheaper. At high utilisation (24/7 serving lots of users), self-hosted wins.</p>
+<p><b>When local is non-negotiable.</b> Regulated data (healthcare, finance, classified). Air-gapped environments. Specific fine-tunes you can't replicate via API. Privacy-sensitive personal assistants.</p>
+<p><b>The hybrid pattern.</b> Most enterprises now run a portfolio: local/self-hosted for the bulk of routine traffic (fine-tuned small models), API for the hard tasks (frontier models on hard prompts). Routing handled by middleware.</p>`
       },
       {
         id: "on-device",
@@ -1710,10 +1902,13 @@ ollama serve  # API server</code></pre>`,
 <p>Frameworks: Core ML (Apple), TensorFlow Lite / LiteRT, MLX, ExecuTorch, ONNX Runtime, MLC LLM.</p>`,
         model: `On-device AI = AI that fits in your pocket and survives airplane mode. Smaller, narrower, but always there.`,
         mistakes: [
-          "Targeting one device class and ignoring the others. iPhones, Androids, and laptops all behave differently.",
-          "Skipping accelerator support. Without it, you'll burn batteries and run at CPU speed.",
-          "Underestimating cold-start latency. The model has to load before it answers."
-        ]
+          "Assuming on-device AI is 'just a small model'. The whole inference stack (model, runtime, memory management) differs from server inference.",
+          "Expecting cloud-quality. On-device models trade quality for latency, privacy, and zero-network. Calibrate user expectations."
+        ],
+        goDeeper: `<p><b>The platforms.</b> iOS: Apple Foundation Models (3B, deeply integrated). Core ML for custom models. Android: Gemini Nano in supported phones. ML Kit for general use. Cross-platform: ONNX Runtime, ExecuTorch (Meta), MediaPipe. Apple Silicon Macs: MLX, Core ML, llama.cpp Metal.</p>
+<p><b>The hardware acceleration.</b> Modern phones have dedicated "neural engines" (Apple Neural Engine, Google Tensor TPU). Modern PCs have NPUs (Snapdragon X, Intel Core Ultra). These run specific quantized model formats faster than CPU and use less battery. Targeting them requires platform-specific tooling.</p>
+<p><b>What's already on-device.</b> iOS 18 onwards: writing tools, image editing, smart suggestions. Android 15: voice typing improvements, photo descriptions. macOS: Image Playground, Genmoji. None of these call a cloud server.</p>
+<p><b>What can't be on-device yet.</b> Frontier-quality reasoning. Long context (you can't put a million tokens on a phone). Highly specialized tasks. As models get more efficient, more capability moves on-device each year.</p>`
       },
       {
         id: "api-serving",
@@ -1725,10 +1920,13 @@ ollama serve  # API server</code></pre>`,
 <p>Managed: OpenAI, Anthropic, Google, Together AI, Groq, Fireworks, Replicate, RunPod.</p>`,
         model: `API serving = wrapping the model in a vending machine. Anyone with the right coin (auth) and slot (endpoint) gets predictable output.`,
         mistakes: [
-          "Reinventing the API schema. Just be OpenAI-compatible.",
-          "Skipping rate limiting and quotas. One looping client can melt your GPUs.",
-          "No retries with backoff. Networks fail; design for it."
-        ]
+          "Hardcoding to one provider's API. Use an abstraction layer (LiteLLM, OpenAI SDK, Vercel AI SDK) so you can swap providers.",
+          "Forgetting about rate limits, timeouts, and retries. Real API integration is more than just a fetch call."
+        ],
+        goDeeper: `<p><b>The major APIs in 2025.</b> OpenAI (GPT-5, GPT-4o, o3). Anthropic (Claude Sonnet 4.5, Claude Opus, Haiku). Google (Gemini 2.5 Pro, Flash). Mistral. Together AI. Fireworks. DeepInfra. Each has roughly OpenAI-compatible interfaces now.</p>
+<p><b>The standardization.</b> OpenAI's chat completions API became the de facto standard. Most providers offer OpenAI-compatible endpoints. Self-hosted servers (vLLM, TGI, Ollama) do too. This portability means you can swap providers with minimal code changes.</p>
+<p><b>Real production concerns.</b> Rate limits (request both higher limits and dedicated capacity). Latency variance (provider tail latency can be terrible — design for it). Retries with backoff (don't hammer on errors). Streaming for chat UIs (better UX than waiting). Cost tracking per user (otherwise expensive surprises).</p>
+<p><b>The abstraction layers.</b> LiteLLM (Python, unifies 100+ providers). Vercel AI SDK (TypeScript, great DX). LangChain (everything, heavyweight). OpenAI SDK pointed at non-OpenAI endpoints. Pick one and route all calls through it.</p>`
       },
       {
         id: "cloud-gpus",
@@ -1739,10 +1937,13 @@ ollama serve  # API server</code></pre>`,
 <p>Pricing tip: on-demand A100 is roughly $2-4/hr; H100 is $3-6/hr depending on provider and commitment. Spot instances can be half that.</p>`,
         model: `Cloud GPUs = AWS but for GPUs. You're renting the machine; you still write the code and manage the chaos.`,
         mistakes: [
-          "Leaving instances running overnight by accident. The bill arrives.",
-          "Ignoring egress fees when moving large model weights between regions.",
-          "Picking a region by latency alone. GPU availability matters too; some regions are perpetually out of H100s."
-        ]
+          "Provisioning on-demand for steady workloads. Use reserved or spot capacity for predictable cost savings.",
+          "Picking GPUs by raw FLOPS. For LLM inference, VRAM size and memory bandwidth matter much more."
+        ],
+        goDeeper: `<p><b>The big providers.</b> AWS (P-series instances). Google Cloud (A-series). Azure (NC-series). Oracle Cloud (often best price). For specialised GPU clouds: CoreWeave, Lambda, RunPod, Modal, Replicate, Fireworks. Specialised clouds typically beat hyperscalers on price for pure GPU workloads.</p>
+<p><b>2025 pricing snapshot.</b> A100 80GB: $1-2/hr (spot), $3-5/hr (on-demand). H100 80GB: $2-4/hr (spot), $7-12/hr (on-demand). B200: $4-8/hr (spot, where available). Spot is often 50-70% cheaper but can be reclaimed; build for restart-ability.</p>
+<p><b>The spot vs on-demand decision.</b> Training: spot is fine if you checkpoint regularly. Production inference: on-demand or reserved (can't have customers waiting for restart). Batch jobs: spot wins. Fine-tuning sessions: spot is OK with good checkpointing.</p>
+<p><b>The serverless GPU option.</b> Modal, Replicate, RunPod Serverless. Pay per second of actual compute, no idle costs. Cold start is 5-30 seconds. Great for sporadic workloads; expensive for steady-state high-volume.</p>`
       },
       {
         id: "edge-ai",
@@ -1753,10 +1954,13 @@ ollama serve  # API server</code></pre>`,
 <p>Trade-offs: limited compute, harder model updates, fragmented hardware. Often you'll use a small model at the edge for fast first-pass, escalating hard cases to a cloud model.</p>`,
         model: `Edge AI = AI brought to where the user/data is. Cloud thinks slowly but big; edge thinks fast but small.`,
         mistakes: [
-          "Confusing 'edge' with 'on-device.' Edge can be a local server in a building; on-device is strictly the user's gadget.",
-          "Designing without an OTA model update path. You'll regret it within months.",
-          "Not measuring failure rates. Edge devices die, networks flap; observability is harder than cloud."
-        ]
+          "Conflating 'edge' with 'on-device'. Edge usually means servers close to users (CDN-style), not the user's actual device.",
+          "Going edge before measuring. For most workloads, regional cloud is enough; edge adds complexity for marginal latency gain."
+        ],
+        goDeeper: `<p><b>What "edge" means.</b> Compute close to the user, not in central data centres. Examples: Cloudflare Workers AI, AWS Wavelength, retail store servers, factory floor compute, vehicle compute, security camera servers. The "edge" is wherever the data is generated and decisions need to happen fast.</p>
+<p><b>Why it matters for AI.</b> Latency: 5-20ms to nearby edge vs 100-300ms to central cloud. Bandwidth: process video locally, send only summaries. Privacy: data never leaves the regulated environment. Resilience: edge keeps working when central is down.</p>
+<p><b>The platforms.</b> Cloudflare Workers AI (serverless LLMs at the edge). NVIDIA Jetson (industrial edge devices). AWS Outposts (cloud hardware on-premises). Many SaaS products quietly use edge for low-latency features (CDN-style).</p>
+<p><b>Where it's overkill.</b> Most consumer AI products. Most business productivity. Anything where 200ms total latency is fine (most chat). Edge AI shines for video, real-time control systems, regulated environments, and high-throughput streaming.</p>`
       }
     ]
   },
@@ -1773,10 +1977,13 @@ ollama serve  # API server</code></pre>`,
 <p>Always pair public benchmarks with your own private eval set built from real user data.</p>`,
         model: `Public benchmarks = standardised exams. Useful for ranking, weak for predicting how a model handles your specific job.`,
         mistakes: [
-          "Picking a model because it tops a leaderboard. The leaderboard rarely matches your use case.",
-          "Trusting benchmarks where the model might have seen the test set during training. It happens constantly.",
-          "Skipping eval entirely because 'this model is famous.'"
-        ]
+          "Trusting benchmark scores as a proxy for your specific use case. Benchmarks measure what's easy to measure; your task is probably different.",
+          "Comparing models across different test suites. MMLU on Model A vs HumanEval on Model B tells you almost nothing about either."
+        ],
+        goDeeper: `<p><b>The famous benchmarks.</b> MMLU (multitask language understanding, 57 subjects). HumanEval (Python coding). GSM8K (grade-school maths). MATH (harder maths). HellaSwag (commonsense). TruthfulQA (factual accuracy). MT-Bench (multi-turn chat). Each measures something specific.</p>
+<p><b>The newer, harder ones.</b> SWE-bench (real GitHub issues). BIG-Bench Hard. ARC-AGI (abstract reasoning). HLE (Humanity's Last Exam). MMLU-Pro. As models saturate older benchmarks, the field invents harder ones every few months.</p>
+<p><b>The contamination problem.</b> Many benchmarks have appeared in training data, intentionally or accidentally. A model "scoring well" may have just memorised the questions. This is why labs increasingly use held-out evals and rotate benchmarks. Trust trends in scores, not absolute numbers.</p>
+<p><b>The "build your own eval" answer.</b> 50 hand-curated examples from your real use case beat any public benchmark for predicting your product's behaviour. Build one before serious model decisions; iterate on it as your product evolves.</p>`
       },
       {
         id: "human-evals",
@@ -1792,10 +1999,13 @@ ollama serve  # API server</code></pre>`,
 <p>Modern reality: human evals are expensive, so people often use "LLM-as-judge" (another LLM does the rating), calibrated against a small human-rated set.</p>`,
         model: `Human eval = the only ground truth for fuzzy tasks. Slow, expensive, irreplaceable for trust.`,
         mistakes: [
-          "Trusting LLM-as-judge without ever validating it against humans.",
-          "Single-rater evals. Always have at least two raters and check agreement.",
-          "Asking raters to score too many things at once. Split into focused dimensions."
-        ]
+          "Using single annotators. One human's opinion is noisy. Three annotators with conflict resolution is the minimum for stable signal.",
+          "Skipping the rubric. 'Better?' is too vague. Spell out the dimensions: helpfulness, accuracy, tone, format compliance."
+        ],
+        goDeeper: `<p><b>The two patterns.</b> Pairwise: show humans two model outputs side-by-side, ask which is better. Absolute: show one output, ask humans to rate on a Likert scale. Pairwise is faster and more reliable; absolute lets you track quality drift over time.</p>
+<p><b>The annotator pool.</b> Internal team (best for nuanced product judgement). Specialist contractors (Scale AI, Surge HQ, Toloka). Crowdsourced (cheap but noisy). Subject-matter experts (medical, legal, etc. — expensive but necessary for specialist domains).</p>
+<p><b>Inter-annotator agreement.</b> The key health metric. Cohen's kappa or simple percent-agreement. If three annotators agree 90% of the time, your task is well-defined. If 60%, your rubric is unclear or the task is genuinely subjective.</p>
+<p><b>LLM-as-judge.</b> Modern shortcut: use a strong LLM (GPT-5, Claude Opus) as an annotator. Cheap, fast, surprisingly correlated with human judgement on most tasks. Validate periodically with real humans. Becoming the default for prototype iteration.</p>`
       },
       {
         id: "cost-per-token",
@@ -1812,10 +2022,13 @@ ollama serve  # API server</code></pre>`,
 <p>Practical exercise: for any feature, estimate monthly tokens at scale, multiply by price, then divide by users. That number tells you if the unit economics work.</p>`,
         model: `Cost-per-token = the most boring, most important metric in AI engineering. The model with the best price/quality ratio for your task wins, period.`,
         mistakes: [
-          "Quoting only input prices. Output dominates the bill for most use cases.",
-          "Forgetting caching. With prompt caching on a long system prompt, costs can drop by 80%.",
-          "Optimising the wrong thing. If 90% of tokens are in retrieval context, trim that before swapping models."
-        ]
+          "Counting only the LLM call cost. Embeddings, vector DB, observability, retries, and orchestration add up.",
+          "Pricing per call, not per user. Active users do many calls; pricing for one call hides the real economics."
+        ],
+        goDeeper: `<p><b>The cost stack.</b> Input tokens times price. Output tokens times price (3-5x input price typically). Embeddings (cheap but adds up). Vector DB queries. Storage (model weights if self-hosting, data if cached). Observability (Langsmith, Helicone, custom logging). Retries on errors. Failed/cancelled calls.</p>
+<p><b>The user-level maths.</b> Average call cost times calls per user per day times 30 = monthly cost per active user. Compare to revenue per user. If cost is more than 30% of revenue, you have a problem. Healthy SaaS economics need cost to be 5-15% of revenue.</p>
+<p><b>The optimisations.</b> Prompt caching (most providers offer this — repeated context cached at lower rate, often 50-90% discount). Model routing (cheap model first, escalate only if needed). Output truncation (set max_tokens carefully). Batch endpoints (50% discount on OpenAI for non-realtime). Fine-tuning a small model for the high-volume task.</p>
+<p><b>The disclosure pattern.</b> Bigger AI products show users their usage and remaining quota. Acclimatises users to the per-call cost concept. Reduces sticker shock at billing time. Even simple tier displays help; users budget when given visibility.</p>`
       },
       {
         id: "speed-benchmarking",
@@ -1830,10 +2043,13 @@ ollama serve  # API server</code></pre>`,
 <p>For chat UX, perceived speed is mostly about TTFT and streaming smoothness. For batch jobs, total latency matters more.</p>`,
         model: `Speed = TTFT for "did it start?" + TPS for "is it flowing?" Both matter, in different products.`,
         mistakes: [
-          "Reporting only average speed. p95 and p99 are what users actually feel under load.",
-          "Comparing speed across providers without matching context length, batch size, and output length.",
-          "Ignoring streaming vs non-streaming. They feel completely different to the user even at the same total latency."
-        ]
+          "Measuring throughput when latency matters (or vice versa). Two different metrics, two different optimization targets.",
+          "Ignoring tail latency. Average latency hides the worst experiences. Track p50, p95, p99."
+        ],
+        goDeeper: `<p><b>The three key metrics.</b> TTFT (time-to-first-token): how long until the user sees anything. TPS (tokens per second): how fast tokens stream after the first. Total latency: end-to-end time for the full response. Chat apps care about TTFT and TPS. Batch jobs care about throughput (total tokens per hour).</p>
+<p><b>The percentile reality.</b> p50 ("median") is misleading for chat apps. p95 is the 5% worst experience your users have. p99 is the very worst 1%. Tail latency spikes (10x normal) crush user satisfaction. Track and alert on percentiles, not averages.</p>
+<p><b>The streaming UX trick.</b> A model that takes 5 seconds to start streaming and then 0.5s to finish feels SLOWER than one that takes 1 second to start and then 4.5s to finish — even though the second is longer total. TTFT dominates perceived speed. Optimize for TTFT first.</p>
+<p><b>Tools for measuring.</b> OpenAI Eval. Provider-specific dashboards. Helicone (provider-agnostic). Langfuse (open source). Or roll your own logging — TTFT and total latency are easy to measure. Tracking them across model and prompt changes is the path to faster products.</p>`
       },
       {
         id: "quality-benchmarking",
@@ -1850,10 +2066,13 @@ ollama serve  # API server</code></pre>`,
 <p>The best eval sets are versioned, in git, and re-run automatically on every prompt change. Without this, prompt engineering is vibes.</p>`,
         model: `Quality eval = your regression test suite for the AI part of your product. Without it, you fly blind.`,
         mistakes: [
-          "Optimising on public benchmarks instead of your own data.",
-          "Letting the eval set get stale. Refresh quarterly with new real queries.",
-          "Treating eval scores as absolute. They are useful for relative comparison across changes, not as a verdict."
-        ]
+          "Treating quality benchmarking as one-time. Models drift, prompts change, your standards evolve. Re-evaluate constantly.",
+          "Optimising for the benchmark rather than the user. 'Goodhart's law' applies: the measure becomes the goal and stops measuring what you cared about."
+        ],
+        goDeeper: `<p><b>The minimum viable eval.</b> 20-50 representative examples from real user behaviour. Expected outputs (or characteristics). Run against every model/prompt change. Track which examples pass/fail over time. This alone separates teams that ship reliable AI from teams that don't.</p>
+<p><b>The eval data sources.</b> Real user queries (gold for relevance). Synthetic adversarial examples (LLM-generated edge cases). Failure cases from production (the bugs your users hit). Manual crafting (hard examples that test specific behaviours). Mix all of them.</p>
+<p><b>Three eval styles.</b> Reference-based (compare output to a known-good reference, e.g. embedding similarity). Rule-based (does output contain key phrases? right format?). LLM-as-judge (have GPT-5 score the answer). Most production setups use all three.</p>
+<p><b>The "regressions break shipping" pattern.</b> Mature AI teams gate deployments on eval scores. Pull request changes prompt? Run eval suite. Score drops on any example? Investigate before merging. This single discipline catches 90% of subtle regressions before users see them.</p>`
       }
     ]
   },
@@ -1876,10 +2095,13 @@ ollama serve  # API server</code></pre>`,
 <p>Pitfalls: handling long histories (summarise), saving messages reliably, dealing with abuse, streaming gracefully on flaky networks, multilingual support.</p>`,
         model: `A chatbot is the smallest interesting LLM product. Get this skeleton right and it scales into a million variants.`,
         mistakes: [
-          "Stuffing the whole history into the prompt forever. Costs balloon, quality drops.",
-          "No persona stability. The bot drifts in style across turns.",
-          "Ignoring abuse and prompt injection. Public bots get jailbroken in hours."
-        ]
+          "Building a chatbot as a generic Q&A interface. Most successful chatbots have a narrow, well-defined job.",
+          "Skipping the 'what happens when it doesn't know' design. Most chatbots fail not on common queries but on edge cases."
+        ],
+        goDeeper: `<p><b>The chatbot category problem.</b> Generic "ask me anything" chatbots usually disappoint. Users don't know what to ask; the bot tries to be everything; the experience is shallow. Successful chatbots have specific scopes: customer support for one product, internal HR FAQ, code review on one codebase.</p>
+<p><b>The reliable architecture.</b> System prompt defines role and constraints. RAG retrieves from your specific knowledge base. Tool calling for actions (lookup order, create ticket, schedule call). Guardrails check outputs before they go to users. Escalation path for "I don't know".</p>
+<p><b>The unknown-question design.</b> What does the bot do when it doesn't know? Options: say so honestly. Route to a human. Suggest related topics it does know. Search elsewhere. Pick the right answer for your product. Don't let it hallucinate fluently.</p>
+<p><b>The unsexy work.</b> 80% of production chatbot effort is data prep (cleaning the docs, structuring metadata), prompt iteration, evaluation, observability. The model choice is maybe 10%. New teams overinvest in models and underinvest in everything else.</p>`
       },
       {
         id: "copilots",
@@ -1896,10 +2118,13 @@ ollama serve  # API server</code></pre>`,
 <p>Examples to study: GitHub Copilot, Cursor, Notion AI, Linear's AI features.</p>`,
         model: `Copilot = an AI that sees your screen, your selection, your context, and acts inside the app instead of in a separate chat.`,
         mistakes: [
-          "Designing a copilot as a chatbot with a different colour. The interaction model needs to be different.",
-          "Showing all suggestions equally. Confidence scoring matters; rank or hide low-confidence ones.",
-          "No undo / accept-reject UX for suggestions. Trust collapses fast without it."
-        ]
+          "Designing copilots to do the work for the user. Copilots assist; they shouldn't replace user judgement on the core task.",
+          "Forgetting reversibility. Suggestions should be editable, dismissable, and undoable. AI making changes the user can't easily revert is a trust-killer."
+        ],
+        goDeeper: `<p><b>The pattern that wins.</b> AI suggests, user decides. GitHub Copilot suggests autocompletions; the developer accepts/rejects. Notion AI drafts paragraphs; the user edits them. Linear's AI tags issues; humans verify. The user is always in the loop on the core action.</p>
+<p><b>The UI grammar.</b> Inline suggestions (ghost text, dismissable). Side-panel proposals (full content, accept/reject buttons). Diffs (show what changes, edit before applying). Confidence indicators. Citation links. Each pattern fits different tasks.</p>
+<p><b>The "good enough" rule.</b> Copilots don't need to be perfect — they need to save the user more time than they cost. A suggestion that's 70% right and editable beats waiting for one that's 95% right. Optimize for human-machine total throughput, not pure AI accuracy.</p>
+<p><b>The unsung importance of latency.</b> Copilots that respond in 200ms get used dozens of times per session. Copilots that take 3 seconds get used a handful of times. Speed is a feature: more user trials at lower quality often beats fewer trials at higher quality.</p>`
       },
       {
         id: "ai-automation",
@@ -1916,10 +2141,13 @@ ollama serve  # API server</code></pre>`,
 <p>Toolchains: n8n, Make, Zapier, Pipedream, custom Python with Temporal/Inngest, or full agentic stacks.</p>`,
         model: `AI automation = "stop doing this manually." Find the highest-volume, lowest-creativity tasks; LLM them; reclaim hours.`,
         mistakes: [
-          "Automating things humans should still see. Bad summaries quietly poison decisions.",
-          "Skipping human-in-the-loop for high-stakes outputs. Always keep a review checkpoint until trust is earned.",
-          "Building one fragile workflow without observability. When it silently breaks, no one notices for weeks."
-        ]
+          "Automating the 10% that's exciting, not the 90% that's boring. The boring stuff is usually where the actual value is.",
+          "Skipping the human-in-the-loop checkpoint on first runs. Even great automation has surprises in production conditions."
+        ],
+        goDeeper: `<p><b>The shape of useful AI automation.</b> Trigger (new email, scheduled time, event in another system). LLM-driven decision or content generation. Action (send reply, create ticket, update database, alert someone). Logging and observability. Easy reversal path.</p>
+<p><b>The "unsupervised first" anti-pattern.</b> Teams build automation, deploy with no human review, and act surprised when it goes wrong on day three. The right path: deploy to a "shadow mode" first — generate but don't send. Compare AI proposals to what a human would have done. Only flip to autonomous once you've reviewed weeks of proposals.</p>
+<p><b>Where automation shines.</b> Repetitive structured tasks (categorising tickets, routing leads, summarising meetings). Triage (flag the urgent ones for human attention). Drafting (give humans a starting point to edit). Pattern detection. Anywhere a human currently does the same task 100+ times a week.</p>
+<p><b>Where it fails.</b> Tasks requiring real judgement under stakes (firing decisions, legal calls, medical diagnoses without doctor review). Edge-case-heavy domains. Anything where the cost of a 1% error rate is catastrophic. Match the automation to the failure tolerance of the task.</p>`
       },
       {
         id: "saas-workflows",
@@ -1937,10 +2165,13 @@ ollama serve  # API server</code></pre>`,
 </ul>`,
         model: `AI SaaS = SaaS, plus an unpredictable expensive component you can never fully control. Build the guardrails or the unit economics will eat you.`,
         mistakes: [
-          "Pricing flat while costs scale per token. Either meter it or set hard quotas.",
-          "Locking in to one model provider. Have a 1-day swap plan.",
-          "Skipping cost-per-customer dashboards. You can't optimise what you don't see."
-        ]
+          "Building AI features without a clear job-to-be-done. 'We added AI' isn't a feature; 'AI summarises customer feedback into themes' is.",
+          "Charging the same regardless of AI usage. Heavy users will eat your margins; light users will subsidise them. Match pricing to usage."
+        ],
+        goDeeper: `<p><b>The dominant patterns.</b> AI summaries (of meetings, threads, documents). AI search (semantic plus RAG over your data). AI drafts (replies, content, code). AI extraction (turn unstructured into structured). AI classification (categorise, tag, route). Most AI SaaS features fit one of these.</p>
+<p><b>The classic shape.</b> User interacts with your product. AI feature triggers (manually or automatically). Backend gets context from your DB. Prompts assembled with the context. LLM call (often with tool use). Response post-processed and shown. Logging captures the result. All hidden behind a smooth UI.</p>
+<p><b>The pricing patterns.</b> Per-seat with AI included (simple, hides cost from users). Credit-based (AI features cost credits, included credits per seat, top-up). Usage-tier ("5 AI summaries per month on Free"). Add-on (AI module costs extra). Right answer depends on your AI cost structure.</p>
+<p><b>The build-vs-buy reality.</b> Common AI features (summaries, search) are increasingly commoditised. Most SaaS products don't differentiate on the LLM call itself; they differentiate on what they wrap around it: their data, their workflow, their UI. Treat the AI feature as plumbing, the moat as the surrounding product.</p>`
       },
       {
         id: "ai-coding",
@@ -1958,9 +2189,12 @@ ollama serve  # API server</code></pre>`,
         model: `AI coding = your throughput goes up; your responsibility for judgement goes up too. Quality of brief in, quality of code out.`,
         mistakes: [
           "Letting agents touch infra/CI without review. Blast radius is huge.",
-          "Skipping tests because the agent wrote 'good-looking' code. Always verify by running.",
-          "Using AI coding for tasks that need careful thinking before any code is written. Don't replace planning with autocomplete."
-        ]
+          "Skipping tests because the agent wrote 'good-looking' code. Always verify by running."
+        ],
+        goDeeper: `<p><b>The 2025 ecosystem.</b> Cursor (full-IDE replacement, Claude-powered). Claude Code (terminal-native agent). GitHub Copilot (autocomplete + Workspace + agents). Aider (terminal pair-programmer). Continue.dev (open-source extension). Devin (autonomous engineer agent). Each takes a slightly different angle on the human-AI workflow.</p>
+<p><b>The two modes.</b> Pair programming: AI suggests, you steer. Tight loop, every change reviewed. Best for unfamiliar code, learning, novel architecture decisions. Agent mode: you set a goal, the agent runs. Larger steps, longer time, more autonomy. Best for known patterns, bulk refactors, well-defined feature work.</p>
+<p><b>What works in practice.</b> Clear briefs (specs in markdown beats vague chat). Small bounded tasks for agents (one feature, one file area). Tests before implementation (agents respect tests when they exist). Frequent commits (easy to revert specific changes). Read every diff before merging.</p>
+<p><b>The shift in skill.</b> What still requires human judgement: architectural decisions, requirements understanding, debugging tricky issues, code review, system design. What AI handles well: writing the code once direction is clear, boilerplate, mechanical refactors, test writing. The skill mix in software engineering is rebalancing fast.</p>`
       },
       {
         id: "ai-orchestration",
@@ -1978,10 +2212,13 @@ ollama serve  # API server</code></pre>`,
 <p>Choose by team familiarity and how much "magic" you can debug.</p>`,
         model: `Orchestration = the glue, retries, branching, and visibility around your LLM calls. If you can't trace a single user request end-to-end, your orchestration isn't good enough.`,
         mistakes: [
-          "Adopting a big framework before you understand the problem. Often a 200-line script is fine.",
-          "Hiding LLM calls inside abstractions you can't debug.",
-          "No tracing. When a 5-step chain fails, you'll wish you had per-step logs."
-        ]
+          "Reaching for a heavyweight framework when a simple async function would do. LangChain and LangGraph are powerful but add cognitive overhead.",
+          "Skipping observability. Without tracing, debugging a multi-step AI workflow is guesswork."
+        ],
+        goDeeper: `<p><b>The framework landscape.</b> LangChain (mature, biggest ecosystem, sometimes overkill). LangGraph (state machines, better than raw LangChain for complex flows). LlamaIndex (RAG-first, also general). DSPy (compiler-like, optimizes prompts automatically). Anthropic SDK (lighter weight). OpenAI Agents SDK (similar). Vercel AI SDK (TypeScript-first).</p>
+<p><b>The observability stack.</b> Langsmith (LangChain's, full-featured). Langfuse (open-source, self-hostable). Helicone (proxy-based, language-agnostic). Phoenix (open-source from Arize). OpenAI's built-in dashboard. Pick one; without traces of LLM calls plus inputs plus outputs plus latencies, debugging is hopeless.</p>
+<p><b>The reliability layer.</b> Retry logic (with exponential backoff). Timeout handling. Fallback models (if GPT-5 is down, fall back to Claude). Rate limiting. Caching (especially of expensive embedding calls). Queue management (don't synchronously block on long jobs). These are normal distributed systems concerns applied to LLMs.</p>
+<p><b>What changes from regular orchestration.</b> Non-deterministic outputs. Token-based costs (track per call). Variable latency. Quality regressions that don't throw errors. Prompt injection attacks. Multi-step error compounding. Treat LLM calls like external APIs that can also be subtly wrong.</p>`
       },
       {
         id: "ai-product-thinking",
