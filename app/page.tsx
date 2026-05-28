@@ -53,6 +53,12 @@ export default function Home() {
             Brand check
           </Link>
           <a
+            href={asset("/inactivity-logout/index.html")}
+            className="text-ps-body-medium inline-flex items-center justify-center h-12 px-6 rounded-full bg-ps-black text-ps-white hover:bg-ps-grey-70 transition-colors"
+          >
+            Inactivity logout
+          </a>
+          <a
             href="https://www.figma.com/design/PWHAQuZxpzMUoTFeVwX1O7/Stars-UI-Toolkit"
             target="_blank"
             rel="noopener noreferrer"

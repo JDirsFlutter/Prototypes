@@ -1,0 +1,648 @@
+/* ================================================================
+   PokerStars Fusion — Foundations
+   Canonical token system from the Flutter UKI / Fusion design tokens.
+   Token names mirror the JSON export (Global Tokens, Theme PS, Alias
+   Tokens) and the rules in PS-DesignRules.md.
+
+   Layer 1 — global primitives   ( --c-teal-600, --space-md, …)
+   Layer 2 — semantic theme tokens for PokerStars
+                                  ( --fill-background,
+                                    --font-interactive-stronger, …)
+   Layer 3 — element classes that consume them (h1, .ps-btn, …)
+
+   Dark theme is the canonical Fusion surface. Light theme overrides
+   the semantic layer only — primitives never change.
+   ================================================================ */
+
+@font-face {
+  font-family: "StarsOriginal";
+  src: url("fonts/StarsOriginal-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Druk Text — display face. Standard width is canonical; Wide is for
+   marketing posters / hero artwork; Cond Super for very-large numerals. */
+@font-face { font-family: "Druk Text"; src: url("fonts/DrukText-Medium.ttf") format("truetype");      font-weight: 500;  font-style: normal;  font-display: swap; }
+@font-face { font-family: "Druk Text"; src: url("fonts/DrukText-MediumItalic.ttf") format("truetype");font-weight: 500;  font-style: italic;  font-display: swap; }
+@font-face { font-family: "Druk Text"; src: url("fonts/DrukText-Bold.ttf") format("truetype");        font-weight: 700;  font-style: normal;  font-display: swap; }
+
+@font-face { font-family: "Druk Text Wide"; src: url("fonts/DrukTextWide-Medium.ttf") format("truetype");      font-weight: 500;  font-style: normal;  font-display: swap; }
+@font-face { font-family: "Druk Text Wide"; src: url("fonts/DrukTextWide-MediumItalic.ttf") format("truetype");font-weight: 500;  font-style: italic;  font-display: swap; }
+@font-face { font-family: "Druk Text Wide"; src: url("fonts/DrukTextWide-Bold.ttf") format("truetype");        font-weight: 700;  font-style: normal;  font-display: swap; }
+@font-face { font-family: "Druk Text Wide"; src: url("fonts/DrukTextWide-BoldItalic.ttf") format("truetype");  font-weight: 700;  font-style: italic;  font-display: swap; }
+@font-face { font-family: "Druk Text Wide"; src: url("fonts/DrukTextWide-Heavy.ttf") format("truetype");       font-weight: 900;  font-style: normal;  font-display: swap; }
+@font-face { font-family: "Druk Text Wide"; src: url("fonts/DrukTextWide-HeavyItalic.ttf") format("truetype"); font-weight: 900;  font-style: italic;  font-display: swap; }
+
+@font-face { font-family: "Druk Cond"; src: url("fonts/DrukCond-Super.otf") format("opentype"); font-weight: 900;  font-style: normal;  font-display: swap; }
+
+/* Roboto is the UI / body face. Roboto Mono for code + token labels. */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;500&display=swap");
+
+:root {
+  /* ─────────────────────────────────────────────────────────────
+     LAYER 1 — Primitives
+     ───────────────────────────────────────────────────────────── */
+
+  /* Neutrals */
+  --c-white:        #ffffff;
+  --c-neutral-20:   #f5f5f5;
+  --c-neutral-40:   #dedede;
+  --c-neutral-50:   #bfbfbf;
+  --c-neutral-100:  #757575;
+  --c-neutral-300:  #575757;
+  --c-neutral-500:  #3b3b3b;
+  --c-neutral-600:  #2e2e2e;
+  --c-neutral-700:  #1c1c1c;
+  --c-neutral-750:  #141414;
+  --c-neutral-800:  #0d0d0d;
+  --c-black:        #000000;
+
+  /* Teal (primary brand) */
+  --c-teal-50:  #e6f8f5;
+  --c-teal-100: #b1ebe0;
+  --c-teal-300: #55d3bd;
+  --c-teal-400: #06d6ae;
+  --c-teal-500: #02bd9c;
+  --c-teal-550: #02a88b;
+  --c-teal-600: #089b80;
+  --c-teal-700: #01866f;
+  --c-teal-800: #016856;
+  --c-teal-900: #014f42;
+  --c-teal-950: #002a2a;
+
+  /* Feedback */
+  --c-red-50:   #fbe7e7;
+  --c-red-300:  #e45b5b;
+  --c-red-600:  #c40909;
+  --c-red-700:  #990707;
+  --c-red-900:  #5a0404;
+
+  --c-blue-50:  #e7f2fa;
+  --c-blue-500: #0c78d1;
+  --c-blue-600: #0b6dbe;
+  --c-blue-700: #095594;
+  --c-blue-900: #053258;
+
+  --c-green-50:  #e6f3e8;
+  --c-green-500: #008916;
+  --c-green-600: #007d14;
+  --c-green-700: #006110;
+  --c-green-900: #003a09;
+
+  --c-yellow-50:  #fff8e6;
+  --c-yellow-500: #ffb800;
+  --c-yellow-600: #e8a700;
+  --c-yellow-700: #b58300;
+  --c-yellow-900: #6b4d00;
+
+  --c-purple-50:  #f1e8f7;
+  --c-purple-500: #6e16b1;
+  --c-purple-600: #6414a1;
+  --c-purple-700: #4e107e;
+  --c-purple-900: #2e094a;
+
+  --c-orange-500: #d34600;
+  --c-orange-700: #963200;
+
+  --c-magenta-500: #e50b78;
+  --c-magenta-700: #a30855;
+
+  /* Brand */
+  --c-brand-red-500: #d70a0a;
+
+  /* Metals */
+  --c-gold-500:   #d4af37;
+  --c-gold-700:   #9c7803;
+  --c-silver-500: #bfc5c7;
+  --c-silver-700: #787e80;
+  --c-bronze-500: #bb7534;
+  --c-bronze-600: #aa6a2f;
+
+  /* Overlay */
+  --c-overlay:    rgba(0, 0, 0, 0.75);
+
+  /* ─────────────────────────────────────────────────────────────
+     Spacing scale (only the 9 valid sizes — 0,2,4,8,12,16,24,32 +
+     the extended set 36,40,48,56,64,80,120). Never interpolate.
+     ───────────────────────────────────────────────────────────── */
+  --space-none: 0;
+  --space-4xs: 2px;
+  --space-2xs: 4px;
+  --space-xs:  8px;
+  --space-sm:  12px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+
+  /* Extended (use sparingly) */
+  --space-450:  36px;
+  --space-500:  40px;
+  --space-600:  48px;
+  --space-700:  56px;
+  --space-800:  64px;
+  --space-1000: 80px;
+  --space-1500: 120px;
+
+  /* Size tokens */
+  --size-4:  16px;
+  --size-5:  20px;
+  --size-6:  24px;
+  --size-8:  32px;
+  --size-9:  36px;
+  --size-10: 40px;
+  --size-12: 48px;
+  --size-16: 64px;
+
+  /* Radius */
+  --radius-none: 0;
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-full: 9999px;
+
+  /* Border width */
+  --border-sm: 1px;
+  --border-md: 2px;
+  --border-lg: 4px;
+
+  /* Opacity */
+  --opacity-disabled: 0.15;
+
+  /* ─────────────────────────────────────────────────────────────
+     Typography primitives
+     ───────────────────────────────────────────────────────────── */
+  --font-heading:      "Druk Text", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --font-heading-wide: "Druk Text Wide", "Druk Text", "Impact", sans-serif;
+  --font-heading-mega: "Druk Cond", "Druk Text", "Impact", sans-serif;
+  --font-body:         "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:         "Roboto Mono", "Menlo", "SF Mono", Consolas, monospace;
+  --font-stars:        "StarsOriginal", var(--font-heading);
+
+  /* Weights */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-bold:    700;
+
+  /* Sizes (only the 11 valid sizes) */
+  --fs-10: 10px;
+  --fs-12: 12px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-32: 32px;
+  --fs-40: 40px;
+  --fs-56: 56px;
+  --fs-88: 88px;
+
+  /* Line heights */
+  --lh-16: 16px;
+  --lh-20: 20px;
+  --lh-24: 24px;
+  --lh-28: 28px;
+  --lh-32: 32px;
+  --lh-40: 40px;
+  --lh-48: 48px;
+  --lh-56: 56px;
+  --lh-88: 88px;
+
+  /* Motion */
+  --ease-standard:  cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasize: cubic-bezier(0.3, 0, 0.1, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LAYER 2 — Semantic theme tokens (PokerStars · DARK is default)
+   Names mirror the Theme PS export exactly so a `fill.background`
+   token in code maps to `var(--fill-background)`.
+   ───────────────────────────────────────────────────────────── */
+:root, [data-theme="dark"] {
+  /* Fill — Interactive · Neutral */
+  --fill-interactive-neutral-weakest:        var(--c-black);
+  --fill-interactive-neutral-weaker:         var(--c-neutral-700);
+  --fill-interactive-neutral-weak:           var(--c-neutral-300);
+  --fill-interactive-neutral-strong:         var(--c-neutral-100);
+  --fill-interactive-neutral-strongest:      var(--c-white);
+  --fill-interactive-neutral-hover-weak:     var(--c-neutral-300);
+  --fill-interactive-neutral-hover-strong:   var(--c-neutral-50);
+  --fill-interactive-neutral-pressed-weak:   var(--c-neutral-500);
+  --fill-interactive-neutral-pressed-strong: var(--c-neutral-500);
+
+  /* Fill — Interactive · Primary (Teal). Dark theme uses teal.700 as default. */
+  --fill-interactive-primary-default:      var(--c-teal-700);
+  --fill-interactive-primary-hover-strong: var(--c-teal-600);
+  --fill-interactive-primary-hover-weak:   var(--c-teal-700);
+  --fill-interactive-primary-pressed:      var(--c-teal-800);
+  --fill-interactive-primary-active:       var(--c-teal-950);
+
+  /* Fill — Interactive · Feedback (weak backgrounds) */
+  --fill-interactive-error-weak:    var(--c-red-900);
+  --fill-interactive-error-strong:  var(--c-red-300);
+  --fill-interactive-info-weak:     var(--c-blue-900);
+  --fill-interactive-success-weak:  var(--c-green-900);
+  --fill-interactive-warning-weak:  var(--c-yellow-900);
+  --fill-interactive-bonus-weak:    var(--c-purple-900);
+
+  /* Fill — Container (non-interactive surfaces) */
+  --fill-container-weakest: var(--c-black);
+  --fill-container-weaker:  var(--c-neutral-750);
+  --fill-container-weak:    var(--c-neutral-500);
+
+  /* Fill — Disabled / Background / Overlay */
+  --fill-disabled-default: var(--c-neutral-700);
+  --fill-disabled-strong:  var(--c-neutral-40);
+  --fill-background:       var(--c-neutral-700);
+  --fill-overlay:          var(--c-overlay);
+
+  /* Border colors */
+  --border-interactive-weak:        var(--c-neutral-500);
+  --border-interactive-strong:      var(--c-neutral-100);
+  --border-interactive-strongest:   var(--c-white);
+  --border-interactive-focused:     var(--c-blue-500);
+  --border-interactive-error:       var(--c-red-300);
+  --border-interactive-primary-active: var(--c-teal-500);
+  --border-disabled-default:        var(--c-neutral-500);
+  --border-disabled-strong:         var(--c-neutral-300);
+
+  /* Font colors */
+  --font-interactive-strongest:        var(--c-white);
+  --font-interactive-stronger:         var(--c-neutral-20);
+  --font-interactive-strong:           var(--c-neutral-40);
+  --font-interactive-medium:           var(--c-neutral-50);
+  --font-interactive-weak:             var(--c-neutral-100);
+  --font-interactive-weakest:          var(--c-black);
+  --font-interactive-onPrimary:        var(--c-black);
+  --font-interactive-primary-default:  var(--c-teal-500);
+  --font-interactive-primary-hover:    var(--c-teal-400);
+  --font-interactive-primary-pressed:  var(--c-teal-600);
+  --font-interactive-urgent:           var(--c-red-300);
+  --font-disabled-default:             var(--c-neutral-300);
+  --font-disabled-strong:              var(--c-neutral-100);
+  --font-error:                        var(--c-red-300);
+  --font-brand:                        var(--c-brand-red-500);
+
+  /* Icon colors */
+  --icon-interactive-strongest:        var(--c-white);
+  --icon-interactive-stronger:         var(--c-neutral-20);
+  --icon-interactive-strong:           var(--c-neutral-40);
+  --icon-interactive-medium:           var(--c-neutral-50);
+  --icon-interactive-weak:             var(--c-neutral-100);
+  --icon-interactive-onPrimary:        var(--c-black);
+  --icon-interactive-onError:          var(--c-white);
+  --icon-interactive-primary-default:  var(--c-teal-500);
+  --icon-interactive-primary-hover:    var(--c-teal-400);
+  --icon-interactive-primary-pressed:  var(--c-teal-600);
+  --icon-feedback-info:                var(--c-blue-50);
+  --icon-feedback-success:             var(--c-green-50);
+  --icon-feedback-error:               var(--c-red-50);
+  --icon-feedback-warning:             var(--c-yellow-50);
+  --icon-feedback-bonus:               var(--c-purple-50);
+  --icon-disabled-weak:                var(--c-neutral-300);
+  --icon-disabled-strong:              var(--c-neutral-100);
+}
+
+[data-theme="light"] {
+  /* Fill — Interactive · Neutral */
+  --fill-interactive-neutral-weakest:        var(--c-white);
+  --fill-interactive-neutral-weaker:         var(--c-neutral-20);
+  --fill-interactive-neutral-weak:           var(--c-neutral-40);
+  --fill-interactive-neutral-strong:         var(--c-neutral-300);
+  --fill-interactive-neutral-strongest:      var(--c-black);
+  --fill-interactive-neutral-hover-weak:     var(--c-neutral-40);
+  --fill-interactive-neutral-hover-strong:   var(--c-neutral-100);
+  --fill-interactive-neutral-pressed-weak:   var(--c-neutral-50);
+  --fill-interactive-neutral-pressed-strong: var(--c-neutral-500);
+
+  /* Primary */
+  --fill-interactive-primary-default:      var(--c-teal-700);
+  --fill-interactive-primary-hover-strong: var(--c-teal-600);
+  --fill-interactive-primary-hover-weak:   var(--c-teal-100);
+  --fill-interactive-primary-pressed:      var(--c-teal-800);
+  --fill-interactive-primary-active:       var(--c-teal-50);
+
+  /* Feedback */
+  --fill-interactive-error-weak:    var(--c-red-50);
+  --fill-interactive-error-strong:  var(--c-red-600);
+  --fill-interactive-info-weak:     var(--c-blue-50);
+  --fill-interactive-success-weak:  var(--c-green-50);
+  --fill-interactive-warning-weak:  var(--c-yellow-50);
+  --fill-interactive-bonus-weak:    var(--c-purple-50);
+
+  /* Container */
+  --fill-container-weakest: var(--c-white);
+  --fill-container-weaker:  var(--c-neutral-20);
+  --fill-container-weak:    var(--c-neutral-40);
+
+  /* Disabled / background */
+  --fill-disabled-default: var(--c-neutral-20);
+  --fill-disabled-strong:  var(--c-neutral-50);
+  --fill-background:       var(--c-white);
+
+  /* Border */
+  --border-interactive-weak:        var(--c-neutral-40);
+  --border-interactive-strong:      var(--c-neutral-100);
+  --border-interactive-strongest:   var(--c-black);
+  --border-interactive-error:       var(--c-red-600);
+  --border-interactive-primary-active: var(--c-teal-700);
+  --border-disabled-default:        var(--c-neutral-40);
+  --border-disabled-strong:         var(--c-neutral-50);
+
+  /* Font */
+  --font-interactive-strongest:        var(--c-black);
+  --font-interactive-stronger:         var(--c-neutral-700);
+  --font-interactive-strong:           var(--c-neutral-500);
+  --font-interactive-medium:           var(--c-neutral-300);
+  --font-interactive-weak:             var(--c-neutral-100);
+  --font-interactive-weakest:          var(--c-white);
+  --font-interactive-onPrimary:        var(--c-black);
+  --font-interactive-primary-default:  var(--c-teal-700);
+  --font-interactive-primary-hover:    var(--c-teal-800);
+  --font-interactive-primary-pressed:  var(--c-teal-900);
+  --font-interactive-urgent:           var(--c-red-700);
+  --font-disabled-default:             var(--c-neutral-50);
+  --font-disabled-strong:              var(--c-neutral-100);
+  --font-error:                        var(--c-red-600);
+
+  /* Icon */
+  --icon-interactive-strongest:        var(--c-black);
+  --icon-interactive-stronger:         var(--c-neutral-700);
+  --icon-interactive-strong:           var(--c-neutral-500);
+  --icon-interactive-medium:           var(--c-neutral-300);
+  --icon-interactive-weak:             var(--c-neutral-100);
+  --icon-interactive-primary-default:  var(--c-teal-700);
+  --icon-interactive-primary-hover:    var(--c-teal-800);
+  --icon-interactive-primary-pressed:  var(--c-teal-900);
+  --icon-feedback-info:                var(--c-blue-600);
+  --icon-feedback-success:             var(--c-green-600);
+  --icon-feedback-error:               var(--c-red-600);
+  --icon-feedback-warning:             var(--c-yellow-700);
+  --icon-feedback-bonus:               var(--c-purple-600);
+  --icon-disabled-weak:                var(--c-neutral-50);
+  --icon-disabled-strong:              var(--c-neutral-100);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LAYER 3 — Element styles
+   ───────────────────────────────────────────────────────────── */
+html { color-scheme: dark; }
+
+body {
+  background: var(--fill-background);
+  color: var(--font-interactive-stronger);
+  font-family: var(--font-body);
+  font-size: var(--fs-16);
+  line-height: var(--lh-24);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings · Druk Text · ALL CAPS · sentence-case content only in body */
+h1, .h-32 {
+  font-family: var(--font-heading); font-weight: var(--fw-medium);
+  font-size: var(--fs-32); line-height: var(--lh-40);
+  text-transform: uppercase; letter-spacing: 0; margin: 0;
+  color: var(--font-interactive-strongest);
+}
+h2, .h-24 {
+  font-family: var(--font-heading); font-weight: var(--fw-medium);
+  font-size: var(--fs-24); line-height: var(--lh-32);
+  text-transform: uppercase; letter-spacing: 0; margin: 0;
+  color: var(--font-interactive-strongest);
+}
+h3, .h-20 {
+  font-family: var(--font-heading); font-weight: var(--fw-medium);
+  font-size: var(--fs-20); line-height: var(--lh-28);
+  text-transform: uppercase; letter-spacing: 0; margin: 0;
+  color: var(--font-interactive-strongest);
+}
+h4, .h-16 {
+  font-family: var(--font-heading); font-weight: var(--fw-medium);
+  font-size: var(--fs-16); line-height: var(--lh-24);
+  text-transform: uppercase; letter-spacing: 0; margin: 0;
+  color: var(--font-interactive-strongest);
+}
+
+/* Titles (Roboto) */
+.title-lg { font: var(--fw-regular) var(--fs-24)/var(--lh-32) var(--font-body); color: var(--font-interactive-stronger); }
+.title-md { font: var(--fw-medium)  var(--fs-20)/var(--lh-28) var(--font-body); color: var(--font-interactive-stronger); }
+.title-sm { font: var(--fw-medium)  var(--fs-18)/var(--lh-24) var(--font-body); color: var(--font-interactive-stronger); }
+
+/* Body */
+.body-lg { font: var(--fw-regular) var(--fs-16)/var(--lh-24) var(--font-body); color: var(--font-interactive-stronger); }
+.body-md { font: var(--fw-regular) var(--fs-14)/var(--lh-20) var(--font-body); color: var(--font-interactive-stronger); }
+.body-sm { font: var(--fw-regular) var(--fs-12)/var(--lh-16) var(--font-body); color: var(--font-interactive-stronger); }
+.body-xs { font: var(--fw-regular) var(--fs-10)/var(--lh-16) var(--font-body); color: var(--font-interactive-stronger); }
+.body-md-medium    { font-weight: var(--fw-medium); }
+.body-md-highlight { font-weight: var(--fw-bold); }
+
+/* Muted text */
+.text-muted   { color: var(--font-interactive-weak); }
+.text-error   { color: var(--font-error); }
+.text-brand   { color: var(--font-brand); }
+
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  line-height: var(--lh-16);
+}
+
+/* Text links — coloured text is RESERVED for clickable links. */
+a.text-link, .text-link {
+  color: var(--font-interactive-primary-default);
+  text-decoration: none;
+  font-weight: var(--fw-medium);
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+a.text-link:hover, .text-link:hover {
+  color: var(--font-interactive-primary-hover);
+  text-decoration: underline;
+}
+a.text-link:focus-visible {
+  outline: var(--border-md) solid var(--border-interactive-focused);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Legacy aliases — keep older preview cards rendering.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --surface-base:        var(--fill-background);
+  --surface-raised:      var(--fill-container-weak);
+  --surface-sunken:      var(--fill-container-weaker);
+  --surface-overlay:     var(--fill-container-weakest);
+  --surface-line:        var(--border-interactive-weak);
+  --surface-line-strong: var(--border-interactive-strong);
+
+  --fg-primary:   var(--font-interactive-stronger);
+  --fg-secondary: var(--font-interactive-strong);
+  --fg-muted:     var(--font-interactive-weak);
+  --fg-disabled:  var(--font-disabled-strong);
+  --fg-on-brand:  var(--font-interactive-onPrimary);
+
+  --action-primary:          var(--fill-interactive-primary-default);
+  --action-primary-hover:    var(--fill-interactive-primary-hover-strong);
+  --action-primary-pressed:  var(--fill-interactive-primary-pressed);
+  --action-primary-disabled: var(--fill-disabled-strong);
+  --action-primary-disabled-fg: var(--font-disabled-strong);
+  --action-destructive:      var(--font-brand);
+  --action-destructive-hover: var(--c-red-700);
+
+  --status-success: var(--c-green-500);
+  --status-warning: var(--c-yellow-500);
+  --status-danger:  var(--font-brand);
+  --status-info:    var(--c-blue-500);
+
+  --focus-ring: 0 0 0 var(--border-md) var(--border-interactive-focused);
+
+  /* Old colour-step aliases kept for preview cards */
+  --neutral-white:  var(--c-white);
+  --neutral-20:     var(--c-neutral-20);
+  --neutral-40:     var(--c-neutral-40);
+  --neutral-50:     var(--c-neutral-50);
+  --neutral-100:    var(--c-neutral-100);
+  --neutral-300:    var(--c-neutral-300);
+  --neutral-500:    var(--c-neutral-500);
+  --neutral-600:    var(--c-neutral-600);
+  --neutral-700:    var(--c-neutral-700);
+  --neutral-750:    var(--c-neutral-750);
+  --neutral-800:    var(--c-neutral-800);
+  --neutral-black:  var(--c-black);
+
+  --brand-teal-50:   var(--c-teal-50);
+  --brand-teal-100:  var(--c-teal-100);
+  --brand-teal-300:  var(--c-teal-300);
+  --brand-teal-400:  var(--c-teal-400);
+  --brand-teal-500:  var(--c-teal-500);
+  --brand-teal-550:  var(--c-teal-550);
+  --brand-teal-600:  var(--c-teal-600);
+  --brand-teal-700:  var(--c-teal-700);
+  --brand-teal-800:  var(--c-teal-800);
+  --brand-teal-900:  var(--c-teal-900);
+  --brand-teal-950:  var(--c-teal-950);
+
+  --brand-red-flag:  var(--c-brand-red-500);
+  --brand-red-50:    var(--c-red-50);
+  --brand-red-100:   #f3b3b3;
+  --brand-red-200:   #ed8e8e;
+  --brand-red-300:   var(--c-red-300);
+  --brand-red-400:   #df3b3b;
+  --brand-red-600:   var(--c-red-600);
+  --brand-red-700:   var(--c-red-700);
+  --brand-red-900:   var(--c-red-900);
+  --brand-red-950:   #2d0202;
+
+  --brand-blue-50:   var(--c-blue-50);
+  --brand-blue-200:  #8fc1ea;
+  --brand-blue-400:  #3d93da;
+  --brand-blue-500:  var(--c-blue-500);
+  --brand-blue-600:  var(--c-blue-600);
+  --brand-blue-700:  var(--c-blue-700);
+  --brand-blue-900:  var(--c-blue-900);
+  --brand-blue-950:  #02192c;
+
+  --brand-green-50:  var(--c-green-50);
+  --brand-green-100: #b0dab7;
+  --brand-green-200: #8ac994;
+  --brand-green-300: #54b063;
+  --brand-green-400: #33a145;
+  --brand-green-500: var(--c-green-500);
+  --brand-green-600: var(--c-green-600);
+  --brand-green-700: var(--c-green-700);
+  --brand-green-900: var(--c-green-900);
+  --brand-green-950: #001d04;
+
+  --brand-yellow-50:  var(--c-yellow-50);
+  --brand-yellow-200: #ffde8a;
+  --brand-yellow-300: #ffcf54;
+  --brand-yellow-500: var(--c-yellow-500);
+  --brand-yellow-600: var(--c-yellow-600);
+  --brand-yellow-700: var(--c-yellow-700);
+  --brand-yellow-800: #8c6500;
+  --brand-yellow-900: var(--c-yellow-900);
+  --brand-yellow-950: #352600;
+
+  --brand-purple-50:  var(--c-purple-50);
+  --brand-purple-100: #d2b7e7;
+  --brand-purple-200: #bc94db;
+  --brand-purple-300: #9e63cb;
+  --brand-purple-400: #8b45c1;
+  --brand-purple-500: var(--c-purple-500);
+  --brand-purple-600: var(--c-purple-600);
+  --brand-purple-700: var(--c-purple-700);
+  --brand-purple-900: var(--c-purple-900);
+  --brand-purple-950: #170425;
+
+  --brand-orange-100: #f1c6b0;
+  --brand-orange-300: #e28354;
+  --brand-orange-400: #dc6b33;
+  --brand-orange-500: var(--c-orange-500);
+  --brand-orange-600: #c04000;
+  --brand-orange-700: var(--c-orange-700);
+  --brand-orange-950: #2c0e00;
+
+  --brand-magenta-100: #f7b3d5;
+  --brand-magenta-200: #f38fc1;
+  --brand-magenta-300: #ee5ca5;
+  --brand-magenta-400: #ea3c93;
+  --brand-magenta-500: var(--c-magenta-500);
+  --brand-magenta-600: #d00a6d;
+  --brand-magenta-700: var(--c-magenta-700);
+  --brand-magenta-800: #7e0642;
+  --brand-magenta-900: #600532;
+  --brand-magenta-950: #300219;
+
+  --silver-500: var(--c-silver-500);
+  --silver-700: var(--c-silver-700);
+  --bronze-500: var(--c-bronze-500);
+  --bronze-600: var(--c-bronze-600);
+  --gold-500:   var(--c-gold-500);
+  --gold-700:   var(--c-gold-700);
+
+  /* Old spacing aliases */
+  --space-25:   var(--space-4xs);
+  --space-50:   var(--space-2xs);
+  --space-75:   6px;
+  --space-100:  var(--space-xs);
+  --space-150:  var(--space-sm);
+  --space-200:  var(--space-md);
+  --space-250:  var(--space-5);
+  --space-300:  var(--space-lg);
+  --space-400:  var(--space-xl);
+
+  /* Old radius/border aliases */
+  --radius-4:   var(--radius-sm);
+  --radius-8:   var(--radius-md);
+  --radius-12:  var(--radius-lg);
+  --radius-14:  var(--radius-lg);
+  --border-1:   var(--border-sm);
+  --border-2:   var(--border-md);
+  --border-4:   var(--border-lg);
+
+  /* Old size aliases */
+  --size-100: var(--size-4);
+  --size-200: var(--size-4);
+  --size-300: var(--size-6);
+  --size-400: var(--size-8);
+  --size-450: var(--size-9);
+  --size-500: var(--size-10);
+  --size-600: var(--size-12);
+  --size-800: var(--size-16);
+
+  /* Display font alias for older code */
+  --font-display:      var(--font-heading);
+  --font-display-wide: var(--font-heading-wide);
+  --font-display-mega: var(--font-heading-mega);
+
+  /* Old shadow tokens — Fusion dark theme leans on hairlines instead of
+     shadows on dark surfaces. Kept for marketing surfaces. */
+  --shadow-1:   0 1px 2px -1px rgba(0,0,0,0.10), 0 1px 3px 0 rgba(0,0,0,0.10);
+  --shadow-2:   0 2px 4px -2px rgba(0,0,0,0.18), 0 4px 8px 0 rgba(0,0,0,0.22);
+  --shadow-3:   0 8px 16px -4px rgba(0,0,0,0.28), 0 16px 32px 0 rgba(0,0,0,0.32);
+  --shadow-glow-teal: 0 0 0 4px rgba(2,189,156,0.18);
+}
