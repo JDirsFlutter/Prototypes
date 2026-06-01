@@ -140,6 +140,28 @@
     padding: 28px; text-align: center; color: var(--muted); font-size: 14px; }
   .round-locked-banner strong { color: var(--navy); }
 
+  /* Sticky save bar */
+  .save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--navy); color: #FFFFFF;
+    padding: 14px 20px; box-shadow: 0 -6px 20px rgba(2, 18, 55, 0.20); z-index: 30;
+    transform: translateY(100%); transition: transform 220ms ease; }
+  .save-bar.visible { transform: translateY(0); }
+  .save-bar-inner { max-width: 960px; margin: 0 auto; display: flex; justify-content: space-between;
+    align-items: center; gap: 16px; flex-wrap: wrap; }
+  .save-bar-text { font-size: 14px; font-weight: 500; }
+  .save-bar-text strong { color: var(--accent); font-weight: 700; }
+  .save-bar-btn { background: var(--accent); color: #FFFFFF; border: 0;
+    padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: filter 150ms ease, transform 80ms ease; }
+  .save-bar-btn:hover { filter: brightness(1.08); }
+  .save-bar-btn:active { transform: scale(0.96); }
+  .save-bar-btn:disabled { background: var(--panel-2); color: var(--muted); cursor: not-allowed; }
+  body.save-bar-shown main { padding-bottom: 100px; }
+
+  /* Pending-pick indicator on cards */
+  .match.is-pending { box-shadow: 0 0 0 2px var(--accent), 0 6px 18px rgba(0, 145, 255, 0.18); }
+  .match-meta .pending-pick { color: var(--accent); font-weight: 600; }
+  .match-meta .pending-pick::before { content: "✏️ "; }
+
   /* Leaderboard */
   .lb { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .lb th, .lb td { padding: 12px 14px; text-align: left; font-size: 14px; }
@@ -218,8 +240,8 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-view="today">Today</button>
-    <button class="tab" data-view="predict">Predict</button>
+    <button class="tab" data-view="today">Today</button>
+    <button class="tab active" data-view="predict">Predict</button>
     <button class="tab" data-view="results">Results</button>
     <button class="tab" data-view="leaderboard">Leaderboard</button>
     <button class="tab" data-view="players">Players</button>
@@ -229,6 +251,13 @@
   <main id="view-root">
     <div class="empty">Loading...</div>
   </main>
+
+  <div class="save-bar" id="save-bar" aria-hidden="true">
+    <div class="save-bar-inner">
+      <span class="save-bar-text" id="save-bar-text">0 picks ready</span>
+      <button class="save-bar-btn" id="save-bar-btn">Save picks</button>
+    </div>
+  </div>
 
   <div class="modal hidden" id="onboarding-modal">
     <div class="modal-card">
@@ -322,7 +351,7 @@
 
   /* ---- State ---------------------------------------------------- */
   const STATE = {
-    view: location.hash === "#admin" ? "today" : "today",
+    view: "predict",             // land on Predict by default; auth happens at save-time
     me: localStorage.getItem("wc26_my_name") || null,
     user: null,                  // Firebase Auth user when signed in
     selectedRound: null,         // id of the round currently in focus in the Predict view
@@ -330,8 +359,10 @@
     fixtures: [],                // [{ id, homeTeam, awayTeam, kickoffISO, status, finalHome, finalAway, stage }]
     participants: [],            // [{ name, uid }]
     predictions: {},             // { [name]: { [matchId]: { homeScore, awayScore, submittedAt } } }
+    pendingPicks: JSON.parse(localStorage.getItem("wc26_pending_picks") || "{}"),
     livePollHandle: null,
     isAdmin: false,
+    flushAfterSignIn: false,
   };
 
   /* ---- Firebase namespaces (populated by initFirebase) --------- */
@@ -354,16 +385,18 @@
       const Auth = auth.getAuth(App);
       const Db = fs.getFirestore(App);
 
-      FB = { app, auth, fs, App, Auth, Db, subs: [] };
+      FB = { app, auth, fs, App, Auth, Db, publicSubs: [], authedSubs: [] };
       STATE.fbMode = "firebase";
 
-      // Auth state listener. Subscriptions are attached only after sign-in
-      // (the Firestore rules require auth for all reads).
+      // Public subscriptions (matches + participants) attach immediately since
+      // Firestore rules allow public reads on these collections.
+      attachPublicSubs();
+
+      // Auth state listener. Predictions sub attaches when signed in.
       await new Promise((res) => {
         auth.onAuthStateChanged(Auth, async (user) => {
           STATE.user = user || null;
           if (user) {
-            // Find the participant doc owned by this UID
             try {
               const q = fs.query(fs.collection(Db, "participants"), fs.where("uid", "==", user.uid));
               const found = await fs.getDocs(q);
@@ -374,15 +407,18 @@
             } catch (err) {
               console.warn("Participant lookup failed:", err);
             }
-            attachSubscriptions();
+            attachAuthedSubs();
             autoSyncIfEmpty();
+            // Flush any pending picks queued before sign-in
+            if (STATE.flushAfterSignIn) {
+              STATE.flushAfterSignIn = false;
+              setTimeout(() => saveAllPending(), 200);
+            }
           } else {
             STATE.me = null;
-            STATE.participants = [];
             STATE.predictions = {};
-            STATE.fixtures = [];
             localStorage.removeItem("wc26_my_name");
-            detachSubscriptions();
+            detachAuthedSubs();
           }
           render();
           res();
@@ -395,20 +431,25 @@
     }
   }
 
-  function attachSubscriptions() {
-    if (!FB || FB.subs.length > 0) return;
+  function attachPublicSubs() {
+    if (!FB || FB.publicSubs.length > 0) return;
     const { fs, Db } = FB;
-    FB.subs.push(fs.onSnapshot(fs.collection(Db, "participants"), (snap) => {
+    FB.publicSubs.push(fs.onSnapshot(fs.collection(Db, "participants"), (snap) => {
       STATE.participants = snap.docs.map((d) => d.data());
       renderTopbar();
       if (STATE.view === "leaderboard" || STATE.view === "players") render();
     }));
-    FB.subs.push(fs.onSnapshot(fs.collection(Db, "matches"), (snap) => {
+    FB.publicSubs.push(fs.onSnapshot(fs.collection(Db, "matches"), (snap) => {
       STATE.fixtures = snap.docs.map((d) => d.data())
         .sort((a, b) => a.kickoffISO.localeCompare(b.kickoffISO));
       render();
     }));
-    FB.subs.push(fs.onSnapshot(fs.collection(Db, "predictions"), (snap) => {
+  }
+
+  function attachAuthedSubs() {
+    if (!FB || FB.authedSubs.length > 0) return;
+    const { fs, Db } = FB;
+    FB.authedSubs.push(fs.onSnapshot(fs.collection(Db, "predictions"), (snap) => {
       const grouped = {};
       snap.docs.forEach((d) => {
         const p = d.data();
@@ -421,10 +462,10 @@
     }));
   }
 
-  function detachSubscriptions() {
+  function detachAuthedSubs() {
     if (!FB) return;
-    FB.subs.forEach((u) => { try { u(); } catch (e) {} });
-    FB.subs = [];
+    FB.authedSubs.forEach((u) => { try { u(); } catch (e) {} });
+    FB.authedSubs = [];
   }
 
   function hydrateLocal() {
@@ -830,14 +871,140 @@
     return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
   }
 
+  /* ---- Pending picks ------------------------------------------- */
+  function persistPending() {
+    localStorage.setItem("wc26_pending_picks", JSON.stringify(STATE.pendingPicks));
+  }
+
+  function isCompletePick(p) {
+    if (!p) return false;
+    return Number.isInteger(p.homeScore) && Number.isInteger(p.awayScore)
+      && p.homeScore >= 0 && p.awayScore >= 0 && p.homeScore <= 20 && p.awayScore <= 20;
+  }
+
+  function completePending() {
+    return Object.entries(STATE.pendingPicks).filter(([, p]) => isCompletePick(p));
+  }
+
+  function queuePickInput(matchId, side, rawValue) {
+    const match = STATE.fixtures.find((f) => f.id === matchId);
+    if (!match) return;
+    // Don't queue picks for matches that have already kicked off
+    if (Date.now() >= new Date(match.kickoffISO).getTime()) return;
+    const n = Number(rawValue);
+    if (rawValue === "" || Number.isNaN(n)) {
+      // Clearing the input clears that side of the pending pick
+      if (STATE.pendingPicks[matchId]) {
+        delete STATE.pendingPicks[matchId][side === "home" ? "homeScore" : "awayScore"];
+        if (Object.keys(STATE.pendingPicks[matchId]).length === 0) {
+          delete STATE.pendingPicks[matchId];
+        }
+      }
+      persistPending();
+      renderSaveBar();
+      return;
+    }
+    const valid = Math.max(0, Math.min(20, Math.floor(n)));
+    if (!STATE.pendingPicks[matchId]) {
+      // Seed from saved pred if exists so partial input doesn't clear the other side
+      const saved = STATE.me ? (STATE.predictions[STATE.me] || {})[matchId] : null;
+      STATE.pendingPicks[matchId] = saved
+        ? { homeScore: saved.homeScore, awayScore: saved.awayScore }
+        : {};
+    }
+    STATE.pendingPicks[matchId][side === "home" ? "homeScore" : "awayScore"] = valid;
+    persistPending();
+    renderSaveBar();
+  }
+
+  async function saveAllPending() {
+    const picks = completePending();
+    if (!picks.length) return;
+    if (!STATE.me) {
+      // Defer until they register / sign in. Open Register panel since they're committing to play.
+      STATE.flushAfterSignIn = true;
+      showOnboarding();
+      setAuthPanel("auth-register");
+      setTimeout(() => { const i = document.getElementById("register-name"); if (i) i.focus(); }, 50);
+      return;
+    }
+    try {
+      if (STATE.fbMode === "firebase") {
+        const { fs, Db } = FB;
+        const batch = fs.writeBatch(Db);
+        const nowISO = new Date().toISOString();
+        picks.forEach(([matchId, p]) => {
+          batch.set(fs.doc(Db, "predictions", STATE.me + "_" + matchId), {
+            participant: STATE.me, matchId,
+            homeScore: p.homeScore, awayScore: p.awayScore,
+            submittedAt: nowISO,
+          });
+        });
+        await batch.commit();
+      } else {
+        if (!STATE.predictions[STATE.me]) STATE.predictions[STATE.me] = {};
+        const nowISO = new Date().toISOString();
+        picks.forEach(([matchId, p]) => {
+          STATE.predictions[STATE.me][matchId] = {
+            participant: STATE.me, matchId,
+            homeScore: p.homeScore, awayScore: p.awayScore,
+            submittedAt: nowISO,
+          };
+        });
+        localStorage.setItem("wc26_local_preds", JSON.stringify(STATE.predictions[STATE.me]));
+      }
+      STATE.pendingPicks = {};
+      persistPending();
+      render();
+    } catch (err) {
+      console.error("Save picks failed:", err);
+      alert("Save failed: " + (err.message || err));
+    }
+  }
+
+  function renderSaveBar() {
+    const bar = document.getElementById("save-bar");
+    if (!bar) return;
+    const completeCount = completePending().length;
+    const totalPending = Object.keys(STATE.pendingPicks).length;
+    const partial = totalPending - completeCount;
+    const text = document.getElementById("save-bar-text");
+    const btn = document.getElementById("save-bar-btn");
+    if (completeCount === 0 && partial === 0) {
+      bar.classList.remove("visible");
+      document.body.classList.remove("save-bar-shown");
+      return;
+    }
+    bar.classList.add("visible");
+    document.body.classList.add("save-bar-shown");
+    let label;
+    if (completeCount === 0) {
+      label = "Enter both scores to enable Save (" + partial + " partial)";
+    } else {
+      label = "Ready to save: " + completeCount + " pick" + (completeCount === 1 ? "" : "s");
+      if (partial > 0) label += " (" + partial + " partial)";
+    }
+    text.innerHTML = label;
+    btn.disabled = completeCount === 0;
+    btn.textContent = STATE.me ? "Save " + completeCount + " pick" + (completeCount === 1 ? "" : "s")
+                               : "Register & save";
+  }
+
   /* ---- Match card ---------------------------------------------- */
   function matchCard(match) {
     const ko = new Date(match.kickoffISO).getTime();
     const locked = Date.now() >= ko;
     const isFinal = match.status === "final";
     const isLive = !isFinal && (match.status === "live" || isLikelyLive(match));
-    const pred = STATE.me ? (STATE.predictions[STATE.me] || {})[match.id] : null;
-    const pts = scorePrediction(pred, match);
+    const savedPred = STATE.me ? (STATE.predictions[STATE.me] || {})[match.id] : null;
+    const pendingPick = STATE.pendingPicks[match.id];
+    const hasPending = !!pendingPick && (
+      pendingPick.homeScore !== undefined || pendingPick.awayScore !== undefined
+    );
+    const pred = hasPending
+      ? { homeScore: pendingPick.homeScore, awayScore: pendingPick.awayScore }
+      : savedPred;
+    const pts = scorePrediction(savedPred, match);
 
     const stageLabel = roundLabelForMatch(match) || match.stage || "Match";
     const head = el("div", { class: "match-head" }, [
@@ -871,15 +1038,20 @@
         String(match.finalAway ?? 0),
       ]);
     } else {
+      const onInput = (e) => queuePickInput(match.id, e.target.dataset.side, e.target.value);
       const homeIn = el("input", {
         type: "number", inputmode: "numeric", min: 0, max: 20, class: "score-input",
-        value: pred ? String(pred.homeScore) : "", disabled: locked,
+        value: pred && pred.homeScore !== undefined ? String(pred.homeScore) : "",
+        disabled: locked,
         "data-side": "home", "data-match": match.id, placeholder: "-",
+        oninput: onInput,
       });
       const awayIn = el("input", {
         type: "number", inputmode: "numeric", min: 0, max: 20, class: "score-input",
-        value: pred ? String(pred.awayScore) : "", disabled: locked,
+        value: pred && pred.awayScore !== undefined ? String(pred.awayScore) : "",
+        disabled: locked,
         "data-side": "away", "data-match": match.id, placeholder: "-",
+        oninput: onInput,
       });
       scoreBlock = el("div", { class: "score-area" }, [
         homeIn, el("span", { class: "score-divider" }, [":"]), awayIn,
@@ -893,49 +1065,50 @@
       ? (match.venueCity ? match.venueName + " · " + match.venueCity : match.venueName)
       : "";
     if (venueText) metaChildren.push(el("div", { class: "venue" }, [venueText]));
-    if (pred && !isFinal && !isLive) {
-      metaChildren.push(el("div", { class: "your-pick" }, [
-        "Your pick: " + pred.homeScore + " : " + pred.awayScore,
+    if (hasPending && isCompletePick(pendingPick) && !isFinal && !isLive) {
+      metaChildren.push(el("div", { class: "pending-pick" }, [
+        "Unsaved pick: " + pendingPick.homeScore + " : " + pendingPick.awayScore,
       ]));
-    } else if (pred && (isFinal || isLive)) {
+    } else if (savedPred && !isFinal && !isLive) {
       metaChildren.push(el("div", { class: "your-pick" }, [
-        "Your pick: " + pred.homeScore + " : " + pred.awayScore,
+        "Your pick: " + savedPred.homeScore + " : " + savedPred.awayScore,
+      ]));
+    } else if (savedPred && (isFinal || isLive)) {
+      metaChildren.push(el("div", { class: "your-pick" }, [
+        "Your pick: " + savedPred.homeScore + " : " + savedPred.awayScore,
       ]));
     }
     const meta = metaChildren.length ? el("div", { class: "match-meta" }, metaChildren) : null;
 
     const footChildren = [];
-    if (isFinal && pred) {
+    if (isFinal && savedPred) {
       const cls = pts === WC_SCORING.exact ? "pts-pill"
         : pts === WC_SCORING.result ? "pts-pill partial" : "pts-pill zero";
       footChildren.push(el("span", {}, ["Result"]));
       footChildren.push(el("span", { class: cls }, ["+" + pts + " pt" + (pts === 1 ? "" : "s")]));
-    } else if (isFinal && !pred) {
+    } else if (isFinal && !savedPred) {
       footChildren.push(el("span", { class: "locked-text" }, ["No prediction"]));
       footChildren.push(el("span", { class: "pts-pill zero" }, ["+0 pts"]));
     } else if (isLive) {
-      footChildren.push(el("span", { class: "locked-text" }, [pred ? "Pick locked at kickoff" : "No prediction"]));
+      footChildren.push(el("span", { class: "locked-text" }, [savedPred ? "Pick locked at kickoff" : "No prediction"]));
     } else if (locked) {
       footChildren.push(el("span", { class: "locked-text" }, ["Locked"]));
-    } else if (!STATE.me) {
-      footChildren.push(el("span", { class: "locked-text" }, ["Register to predict"]));
+    } else if (hasPending && isCompletePick(pendingPick)) {
+      footChildren.push(el("span", { class: "locked-text" }, ["Ready to save"]));
+    } else if (hasPending) {
+      footChildren.push(el("span", { class: "locked-text" }, ["Enter both scores to save"]));
+    } else if (savedPred) {
+      footChildren.push(el("span", { class: "locked-text" }, ["Saved. Edit anytime before kickoff."]));
     } else {
-      const flash = el("span", { class: "saved-flash" }, ["Saved"]);
-      const btn = el("button", {
-        class: "save-btn",
-        onclick: () => {
-          const h = document.querySelector('[data-card="' + match.id + '"] [data-side="home"]');
-          const a = document.querySelector('[data-card="' + match.id + '"] [data-side="away"]');
-          submitPrediction(match.id, h.value, a.value);
-        },
-      }, [pred ? "Update pick" : "Save pick"]);
-      footChildren.push(flash);
-      footChildren.push(btn);
+      footChildren.push(el("span", { class: "locked-text" }, ["Tap the boxes to predict"]));
     }
 
-    const foot = el("div", { class: "match-foot" }, footChildren);
+    const foot = footChildren.length ? el("div", { class: "match-foot" }, footChildren) : null;
 
-    const cls = "match" + (isFinal ? " is-final" : "") + (isLive ? " is-live" : "");
+    const cls = "match"
+      + (isFinal ? " is-final" : "")
+      + (isLive ? " is-live" : "")
+      + (hasPending && !isFinal && !isLive ? " is-pending" : "");
     return el("div", { class: cls, "data-card": match.id }, [head, body, meta, foot]);
   }
 
@@ -1318,6 +1491,7 @@
     else if (STATE.view === "rules") renderRules(root);
     renderBanner(root);
     renderTopbar();
+    renderSaveBar();
   }
 
   function setAuthPanel(panel) {
@@ -1414,6 +1588,7 @@
   });
   document.getElementById("admin-sync-fixtures").addEventListener("click", syncFixtures);
   document.getElementById("admin-sync-scores").addEventListener("click", syncTodayScores);
+  document.getElementById("save-bar-btn").addEventListener("click", saveAllPending);
 
   window.addEventListener("hashchange", () => {
     if (location.hash === "#admin") openAdmin();
@@ -1451,10 +1626,6 @@
     autoSyncIfEmpty();
     startLivePolling();
     if (location.hash === "#admin") openAdmin();
-    // First visit: prompt for registration
-    if (!STATE.me && location.hash !== "#admin") {
-      setTimeout(showOnboarding, 300);
-    }
   })();
   </script>
 </body>
