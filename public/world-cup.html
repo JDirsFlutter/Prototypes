@@ -232,7 +232,7 @@
       </div>
       <div class="topbar-stats">
         <span class="topbar-stat">
-          <button class="who-btn" id="who-btn">Register</button>
+          <button class="who-btn" id="who-btn">Add yourself</button>
         </span>
         <span class="topbar-stat"><strong id="topbar-points">0</strong> pts</span>
       </div>
@@ -261,67 +261,27 @@
 
   <div class="modal hidden" id="onboarding-modal">
     <div class="modal-card">
-      <div id="auth-signin">
-        <h2>Sign in</h2>
-        <p>Welcome back. Sign in to keep your predictions and points synced across devices.</p>
-        <form id="signin-form" novalidate>
-          <label class="form-label" for="signin-email">Email</label>
-          <input type="email" id="signin-email" class="form-input" placeholder="you@flutterint.com" autocomplete="email" />
-          <div style="height: 12px;"></div>
-          <label class="form-label" for="signin-password">Password</label>
-          <input type="password" id="signin-password" class="form-input" placeholder="At least 8 characters" autocomplete="current-password" />
-          <p class="form-hint"><a href="#" id="forgot-password-link">Forgot password?</a></p>
+      <div id="claim-panel">
+        <h2>Add yourself to the game</h2>
+        <p>Pick the name you want on the leaderboard. This browser will remember you. No password, no email.</p>
+        <form id="claim-form" novalidate>
+          <label class="form-label" for="claim-name">Your name</label>
+          <input type="text" id="claim-name" class="form-input" placeholder="e.g. James" maxlength="30" autocomplete="given-name" />
+          <p class="form-hint">First name is enough. If it's taken, add an initial like "James D".</p>
           <div class="modal-actions">
             <button type="button" class="auth-close">Cancel</button>
-            <button type="submit" class="primary">Sign in</button>
+            <button type="submit" class="primary">Add me</button>
           </div>
-          <p class="form-error" id="signin-error"></p>
-        </form>
-        <p class="auth-switch">New here? <a href="#" id="show-register-link">Register an account</a>.</p>
-      </div>
-
-      <div id="auth-register" class="hidden">
-        <h2>Register to play</h2>
-        <p>Predict scores for every World Cup match, climb the leaderboard. Open to anyone in the company.</p>
-        <form id="register-form" novalidate>
-          <label class="form-label" for="register-name">Display name</label>
-          <input type="text" id="register-name" class="form-input" placeholder="e.g. James" maxlength="30" autocomplete="given-name" />
-          <p class="form-hint">Shown on the leaderboard. Use your first name. Add an initial if it's taken (e.g. "James D").</p>
-          <label class="form-label" for="register-email">Email</label>
-          <input type="email" id="register-email" class="form-input" placeholder="you@flutterint.com" autocomplete="email" />
-          <p class="form-hint">Used to sign in. Never shown on the leaderboard.</p>
-          <label class="form-label" for="register-password">Password</label>
-          <input type="password" id="register-password" class="form-input" placeholder="At least 8 characters" autocomplete="new-password" />
-          <div class="modal-actions">
-            <button type="button" class="auth-close">Cancel</button>
-            <button type="submit" class="primary">Register and play</button>
-          </div>
-          <p class="form-error" id="register-error"></p>
-        </form>
-        <p class="auth-switch">Already registered? <a href="#" id="show-signin-link">Sign in</a>.</p>
-      </div>
-
-      <div id="auth-forgot" class="hidden">
-        <h2>Reset password</h2>
-        <p>Type your email and we'll send a reset link.</p>
-        <form id="forgot-form" novalidate>
-          <label class="form-label" for="forgot-email">Email</label>
-          <input type="email" id="forgot-email" class="form-input" placeholder="you@flutterint.com" autocomplete="email" />
-          <div class="modal-actions">
-            <button type="button" id="back-to-signin">Back</button>
-            <button type="submit" class="primary">Send reset link</button>
-          </div>
-          <p class="form-error" id="forgot-error"></p>
-          <p class="form-hint" id="forgot-success"></p>
+          <p class="form-error" id="claim-error"></p>
         </form>
       </div>
 
-      <div id="auth-account" class="hidden">
-        <h2>Account</h2>
-        <p>Signed in as <strong id="account-name"></strong> (<span id="account-email"></span>).</p>
+      <div id="account-panel" class="hidden">
+        <h2>You're in</h2>
+        <p>Playing as <strong id="account-name"></strong>. Your picks are tied to this browser, so use the same device to come back.</p>
+        <p class="form-hint">Switching devices? Ask the admin to transfer your name.</p>
         <div class="modal-actions">
           <button type="button" class="auth-close">Close</button>
-          <button type="button" id="signout-btn" class="primary">Sign out</button>
         </div>
       </div>
     </div>
@@ -385,45 +345,44 @@
       const Auth = auth.getAuth(App);
       const Db = fs.getFirestore(App);
 
-      FB = { app, auth, fs, App, Auth, Db, publicSubs: [], authedSubs: [] };
+      FB = { app, auth, fs, App, Auth, Db, subs: [] };
       STATE.fbMode = "firebase";
 
-      // Public subscriptions (matches + participants) attach immediately since
-      // Firestore rules allow public reads on these collections.
-      attachPublicSubs();
-
-      // Auth state listener. Predictions sub attaches when signed in.
+      // Anonymous auth: each browser gets a stable UID without any user action.
+      // Predictions can only be written by the UID that owns the participant doc.
+      try {
+        await auth.signInAnonymously(Auth);
+      } catch (err) {
+        console.error("Anonymous sign-in failed:", err);
+      }
       await new Promise((res) => {
         auth.onAuthStateChanged(Auth, async (user) => {
           STATE.user = user || null;
           if (user) {
+            // Find the participant doc owned by this anonymous UID
             try {
               const q = fs.query(fs.collection(Db, "participants"), fs.where("uid", "==", user.uid));
               const found = await fs.getDocs(q);
               if (!found.empty) {
                 STATE.me = found.docs[0].data().name;
                 localStorage.setItem("wc26_my_name", STATE.me);
+              } else {
+                STATE.me = null;
+                localStorage.removeItem("wc26_my_name");
               }
             } catch (err) {
               console.warn("Participant lookup failed:", err);
             }
-            attachAuthedSubs();
             autoSyncIfEmpty();
-            // Flush any pending picks queued before sign-in
-            if (STATE.flushAfterSignIn) {
-              STATE.flushAfterSignIn = false;
-              setTimeout(() => saveAllPending(), 200);
-            }
-          } else {
-            STATE.me = null;
-            STATE.predictions = {};
-            localStorage.removeItem("wc26_my_name");
-            detachAuthedSubs();
           }
           render();
           res();
         });
       });
+
+      // All collections are publicly readable per the Firestore rules.
+      // Writes are gated by anonymous UID matching the participant doc.
+      attachAllSubs();
     } catch (err) {
       console.error("Firebase init failed, falling back to local mode:", err);
       STATE.fbMode = "local";
@@ -431,25 +390,20 @@
     }
   }
 
-  function attachPublicSubs() {
-    if (!FB || FB.publicSubs.length > 0) return;
+  function attachAllSubs() {
+    if (!FB || FB.subs.length > 0) return;
     const { fs, Db } = FB;
-    FB.publicSubs.push(fs.onSnapshot(fs.collection(Db, "participants"), (snap) => {
+    FB.subs.push(fs.onSnapshot(fs.collection(Db, "participants"), (snap) => {
       STATE.participants = snap.docs.map((d) => d.data());
       renderTopbar();
       if (STATE.view === "leaderboard" || STATE.view === "players") render();
     }));
-    FB.publicSubs.push(fs.onSnapshot(fs.collection(Db, "matches"), (snap) => {
+    FB.subs.push(fs.onSnapshot(fs.collection(Db, "matches"), (snap) => {
       STATE.fixtures = snap.docs.map((d) => d.data())
         .sort((a, b) => a.kickoffISO.localeCompare(b.kickoffISO));
       render();
     }));
-  }
-
-  function attachAuthedSubs() {
-    if (!FB || FB.authedSubs.length > 0) return;
-    const { fs, Db } = FB;
-    FB.authedSubs.push(fs.onSnapshot(fs.collection(Db, "predictions"), (snap) => {
+    FB.subs.push(fs.onSnapshot(fs.collection(Db, "predictions"), (snap) => {
       const grouped = {};
       snap.docs.forEach((d) => {
         const p = d.data();
@@ -460,12 +414,6 @@
       renderTopbar();
       render();
     }));
-  }
-
-  function detachAuthedSubs() {
-    if (!FB) return;
-    FB.authedSubs.forEach((u) => { try { u(); } catch (e) {} });
-    FB.authedSubs = [];
   }
 
   function hydrateLocal() {
@@ -479,7 +427,7 @@
     if (cachedFx.length) STATE.fixtures = cachedFx;
   }
 
-  /* ---- Auth + registration ------------------------------------- */
+  /* ---- Name claim (anonymous auth) ----------------------------- */
   function normalizeName(raw) {
     if (!raw) return "";
     return raw.trim().split(/\s+/).map((w) => {
@@ -489,142 +437,65 @@
     }).join(" ");
   }
 
-  function setErrorById(id, msg) {
-    const e = document.getElementById(id);
-    if (e) e.textContent = msg || "";
-  }
-  function setRegisterError(msg) { setErrorById("register-error", msg); }
-  function setSigninError(msg) { setErrorById("signin-error", msg); }
-  function setForgotError(msg) { setErrorById("forgot-error", msg); }
-  function setForgotSuccess(msg) {
-    const e = document.getElementById("forgot-success");
+  function setClaimError(msg) {
+    const e = document.getElementById("claim-error");
     if (e) e.textContent = msg || "";
   }
 
-  function friendlyAuthError(err) {
-    const code = (err && err.code) || "";
-    if (code.includes("invalid-credential") || code.includes("user-not-found") || code.includes("wrong-password")) {
-      return "Email or password is wrong.";
-    }
-    if (code.includes("email-already-in-use")) return "That email is already registered. Try signing in.";
-    if (code.includes("invalid-email")) return "That doesn't look like a valid email.";
-    if (code.includes("weak-password")) return "Password is too weak. Use at least 8 characters.";
-    if (code.includes("too-many-requests")) return "Too many attempts. Wait a moment and try again.";
-    if (code.includes("network-request-failed")) return "Network issue. Check your connection.";
-    return (err && err.message) || "Something went wrong.";
-  }
-
-  async function registerWithEmail(rawName, email, password) {
-    setRegisterError("");
+  async function claimName(rawName) {
+    setClaimError("");
     const name = normalizeName(rawName);
-    if (!name || name.length < 2) { setRegisterError("Enter a display name (at least 2 characters)."); return; }
-    if (name.length > 30) { setRegisterError("Display name is too long (max 30 characters)."); return; }
-    if (!/^[A-Za-z][A-Za-z .'\-]*$/.test(name)) { setRegisterError("Display name: letters, spaces, hyphens and apostrophes only."); return; }
+    if (!name || name.length < 2) { setClaimError("Enter at least 2 characters."); return; }
+    if (name.length > 30) { setClaimError("Max 30 characters."); return; }
+    if (!/^[A-Za-z][A-Za-z .'\-]*$/.test(name)) { setClaimError("Letters, spaces, hyphens and apostrophes only."); return; }
 
     if (STATE.fbMode === "local") {
-      // Local mode skips email/password (Firebase not configured)
       STATE.me = name;
       localStorage.setItem("wc26_my_name", name);
       STATE.predictions[name] = JSON.parse(localStorage.getItem("wc26_local_preds") || "{}");
       STATE.participants = [{ name, uid: "local", joinedAt: new Date().toISOString() }];
       hideModal("onboarding-modal");
       render();
+      if (STATE.flushAfterSignIn) {
+        STATE.flushAfterSignIn = false;
+        setTimeout(() => saveAllPending(), 100);
+      }
       return;
     }
 
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setRegisterError("Enter a valid email address."); return; }
-    if (!password || password.length < 8) { setRegisterError("Password must be at least 8 characters."); return; }
-
-    const { fs, auth, Auth, Db } = FB;
-    // 1. Check display name isn't taken before creating the auth account.
-    //    Requires the participants read rule to allow unauthenticated reads.
+    const { fs, Auth, Db } = FB;
+    const myUid = Auth.currentUser && Auth.currentUser.uid;
+    if (!myUid) {
+      setClaimError("Anonymous session not ready yet. Try again in a second.");
+      return;
+    }
     const ref = fs.doc(Db, "participants", name);
     let existing;
     try {
       existing = await fs.getDoc(ref);
     } catch (err) {
-      console.error("Name-availability check failed:", err);
-      setRegisterError("Couldn't check name availability. Firestore rules may need updating (see chat).");
+      console.error("Name lookup failed:", err);
+      setClaimError("Couldn't reach the database. Check your connection and try again.");
       return;
     }
-    if (existing.exists()) {
-      setRegisterError("\"" + name + "\" is already taken. Add an initial, e.g. \"" + name + " D\".");
+    if (existing.exists() && existing.data().uid !== myUid) {
+      setClaimError("\"" + name + "\" is taken. Try \"" + name + " D\" or similar.");
       return;
     }
-    // 2. Create the auth account
-    let cred;
     try {
-      cred = await auth.createUserWithEmailAndPassword(Auth, email.trim(), password);
+      await fs.setDoc(ref, { name, uid: myUid, joinedAt: new Date().toISOString() });
     } catch (err) {
-      console.error("Auth create failed:", err);
-      setRegisterError(friendlyAuthError(err));
-      return;
-    }
-    // 3. Write the participant doc
-    try {
-      await fs.setDoc(ref, { name, uid: cred.user.uid, joinedAt: new Date().toISOString() });
-    } catch (err) {
-      console.error("Participant doc write failed:", err);
-      setRegisterError("Account created, but couldn't claim the display name: " + friendlyAuthError(err));
+      console.error("Claim write failed:", err);
+      setClaimError("Couldn't save your claim. Try again.");
       return;
     }
     STATE.me = name;
     localStorage.setItem("wc26_my_name", name);
     hideModal("onboarding-modal");
     render();
-  }
-
-  async function signInWithEmail(email, password) {
-    setSigninError("");
-    if (!email || !password) { setSigninError("Enter your email and password."); return; }
-    if (STATE.fbMode === "local") {
-      setSigninError("Local mode is single-browser only. Register a name on this device to play.");
-      return;
-    }
-    const { auth, Auth } = FB;
-    try {
-      await auth.signInWithEmailAndPassword(Auth, email.trim(), password);
-      // onAuthStateChanged will fire and resolve STATE.me + render
-      hideModal("onboarding-modal");
-    } catch (err) {
-      setSigninError(friendlyAuthError(err));
-    }
-  }
-
-  async function signOutUser() {
-    if (STATE.fbMode === "firebase") {
-      try {
-        await FB.auth.signOut(FB.Auth);
-      } catch (err) {
-        console.warn("Sign out failed:", err);
-      }
-    } else {
-      // Local mode: just clear identity
-      STATE.me = null;
-      STATE.participants = [];
-      localStorage.removeItem("wc26_my_name");
-      render();
-    }
-    hideModal("onboarding-modal");
-  }
-
-  async function sendResetEmail(email) {
-    setForgotError("");
-    setForgotSuccess("");
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      setForgotError("Enter a valid email address.");
-      return;
-    }
-    if (STATE.fbMode !== "firebase") {
-      setForgotError("Reset email only works when Firebase is configured.");
-      return;
-    }
-    const { auth, Auth } = FB;
-    try {
-      await auth.sendPasswordResetEmail(Auth, email.trim());
-      setForgotSuccess("Reset link sent. Check your inbox.");
-    } catch (err) {
-      setForgotError(friendlyAuthError(err));
+    if (STATE.flushAfterSignIn) {
+      STATE.flushAfterSignIn = false;
+      setTimeout(() => saveAllPending(), 100);
     }
   }
 
@@ -921,11 +792,9 @@
     const picks = completePending();
     if (!picks.length) return;
     if (!STATE.me) {
-      // Defer until they register / sign in. Open Register panel since they're committing to play.
+      // Defer until they add themselves
       STATE.flushAfterSignIn = true;
       showOnboarding();
-      setAuthPanel("auth-register");
-      setTimeout(() => { const i = document.getElementById("register-name"); if (i) i.focus(); }, 50);
       return;
     }
     try {
@@ -987,7 +856,7 @@
     text.innerHTML = label;
     btn.disabled = completeCount === 0;
     btn.textContent = STATE.me ? "Save " + completeCount + " pick" + (completeCount === 1 ? "" : "s")
-                               : "Register & save";
+                               : "Add yourself & save";
   }
 
   /* ---- Match card ---------------------------------------------- */
@@ -1311,7 +1180,7 @@
     if (!STATE.me) {
       root.appendChild(el("div", { class: "banner info" }, [
         "Want to play? ",
-        el("a", { href: "#", onclick: (e) => { e.preventDefault(); showOnboarding(); } }, ["Register"]),
+        el("a", { href: "#", onclick: (e) => { e.preventDefault(); showOnboarding(); } }, ["Add yourself"]),
         ".",
       ]));
     }
@@ -1368,12 +1237,12 @@
 
     root.appendChild(el("div", { class: "rules-card" }, [
       el("h3", null, ["Privacy"]),
-      el("p", null, ["Open registration to anyone in the company with the URL. Pick a display name (first name is fine). The page is unindexed (noindex, nofollow) so it won't surface in search."]),
+      el("p", null, ["No password, no email. Just pick a display name. The page is unindexed (noindex, nofollow) so it won't surface in search."]),
     ]));
 
     root.appendChild(el("div", { class: "rules-card" }, [
       el("h3", null, ["Playing from multiple devices"]),
-      el("p", null, ["Sign in with your email and password from any browser. Your picks, points, and display name follow you. Forgot password? There's a reset link on the sign-in screen."]),
+      el("p", null, ["Your picks are tied to this browser. If you want to play from another device, ask the admin to transfer your name (a 30 second job)."]),
     ]));
   }
 
@@ -1473,8 +1342,8 @@
       const a = el("a", {
         href: "#",
         onclick: (e) => { e.preventDefault(); showOnboarding(); },
-      }, ["Register"]);
-      root.prepend(el("div", { class: "banner info" }, [a, " to start predicting. Open to anyone in the company with this link."]));
+      }, ["Add yourself"]);
+      root.prepend(el("div", { class: "banner info" }, [a, " to the game. No password, no email. Your browser remembers you."]));
     }
   }
 
@@ -1495,33 +1364,21 @@
   }
 
   function setAuthPanel(panel) {
-    ["auth-signin", "auth-register", "auth-forgot", "auth-account"].forEach((id) => {
+    ["claim-panel", "account-panel"].forEach((id) => {
       const node = document.getElementById(id);
       if (node) node.classList.toggle("hidden", id !== panel);
     });
   }
 
   function showOnboarding() {
-    setRegisterError("");
-    setSigninError("");
-    setForgotError("");
-    setForgotSuccess("");
+    setClaimError("");
     if (STATE.me) {
-      // Signed in (Firebase) or claimed (local): show account panel
       document.getElementById("account-name").textContent = STATE.me;
-      const emailNode = document.getElementById("account-email");
-      emailNode.textContent = STATE.user && STATE.user.email
-        ? STATE.user.email
-        : (STATE.fbMode === "local" ? "local mode" : "");
-      setAuthPanel("auth-account");
-    } else if (STATE.fbMode === "local") {
-      setAuthPanel("auth-register");
-      const focusEl = document.getElementById("register-name");
-      if (focusEl) setTimeout(() => focusEl.focus(), 50);
+      setAuthPanel("account-panel");
     } else {
-      setAuthPanel("auth-signin");
-      const focusEl = document.getElementById("signin-email");
-      if (focusEl) setTimeout(() => focusEl.focus(), 50);
+      setAuthPanel("claim-panel");
+      const input = document.getElementById("claim-name");
+      if (input) setTimeout(() => input.focus(), 50);
     }
     showModal("onboarding-modal");
   }
@@ -1536,51 +1393,10 @@
   document.getElementById("who-btn").addEventListener("click", showOnboarding);
   document.querySelectorAll(".auth-close").forEach((btn) => btn.addEventListener("click", () => hideModal("onboarding-modal")));
 
-  document.getElementById("register-form").addEventListener("submit", (e) => {
+  document.getElementById("claim-form").addEventListener("submit", (e) => {
     e.preventDefault();
-    registerWithEmail(
-      document.getElementById("register-name").value,
-      document.getElementById("register-email").value,
-      document.getElementById("register-password").value
-    );
+    claimName(document.getElementById("claim-name").value);
   });
-
-  document.getElementById("signin-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    signInWithEmail(
-      document.getElementById("signin-email").value,
-      document.getElementById("signin-password").value
-    );
-  });
-
-  document.getElementById("forgot-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    sendResetEmail(document.getElementById("forgot-email").value);
-  });
-
-  document.getElementById("show-register-link").addEventListener("click", (e) => {
-    e.preventDefault();
-    setRegisterError(""); setSigninError("");
-    setAuthPanel("auth-register");
-    setTimeout(() => document.getElementById("register-name").focus(), 50);
-  });
-  document.getElementById("show-signin-link").addEventListener("click", (e) => {
-    e.preventDefault();
-    setRegisterError(""); setSigninError("");
-    setAuthPanel("auth-signin");
-    setTimeout(() => document.getElementById("signin-email").focus(), 50);
-  });
-  document.getElementById("forgot-password-link").addEventListener("click", (e) => {
-    e.preventDefault();
-    setForgotError(""); setForgotSuccess("");
-    document.getElementById("forgot-email").value = document.getElementById("signin-email").value || "";
-    setAuthPanel("auth-forgot");
-    setTimeout(() => document.getElementById("forgot-email").focus(), 50);
-  });
-  document.getElementById("back-to-signin").addEventListener("click", () => {
-    setAuthPanel("auth-signin");
-  });
-  document.getElementById("signout-btn").addEventListener("click", signOutUser);
   document.getElementById("admin-close").addEventListener("click", () => {
     hideModal("admin-modal");
     location.hash = "";
