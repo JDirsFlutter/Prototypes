@@ -543,6 +543,32 @@ function prevTopic(id) {
   return idx > 0 ? ALL_TOPICS[idx - 1] : null;
 }
 
+/* Hash-based deep linking: share course.html#tokens, back/forward works */
+function navigateTo(id, { push = true } = {}) {
+  if (id !== "__home" && !topicById(id)) return;
+  STATE.currentId = id;
+  saveState();
+  const wantHash = id === "__home" ? "" : "#" + id;
+  if (window.location.hash !== wantHash) {
+    const url = wantHash || window.location.pathname + window.location.search;
+    if (push) history.pushState({ id }, "", url);
+    else history.replaceState({ id }, "", url);
+  }
+  renderAll();
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+window.addEventListener("popstate", () => {
+  const fromHash = (window.location.hash || "").replace(/^#/, "");
+  const id = !fromHash ? "__home" : (topicById(fromHash) ? fromHash : null);
+  if (id && id !== STATE.currentId) {
+    if (typeof Audio !== "undefined" && Audio.stop) Audio.stop();
+    STATE.currentId = id;
+    saveState();
+    renderAll();
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+});
+
 /* Gamification helpers */
 function todayISO() {
   const d = new Date();
@@ -613,10 +639,7 @@ function renderNav() {
   homeEl.innerHTML = `<span class="home-link-arrow">&#8962;</span><span>Home</span>`;
   homeEl.addEventListener("click", () => {
     Audio.stop();
-    STATE.currentId = "__home";
-    saveState();
-    renderAll();
-    window.scrollTo({ top: 0, behavior: "instant" });
+    navigateTo("__home");
     maybeCloseDrawer();
   });
   nav.appendChild(homeEl);
@@ -637,10 +660,7 @@ function renderNav() {
       el.innerHTML = `<span class="check"></span><span class="label">${t.title}</span>`;
       el.addEventListener("click", () => {
         if (Audio.currentTopicId !== t.id) Audio.stop();
-        STATE.currentId = t.id;
-        saveState();
-        renderAll();
-        window.scrollTo({ top: 0, behavior: "instant" });
+        navigateTo(t.id);
         maybeCloseDrawer();
       });
       nav.appendChild(el);
@@ -721,10 +741,7 @@ function renderHome() {
   document.getElementById("content").innerHTML = html;
   document.getElementById("homeStartBtn").addEventListener("click", () => {
     Audio.stop();
-    STATE.currentId = ctaTarget;
-    saveState();
-    renderAll();
-    window.scrollTo({ top: 0, behavior: "instant" });
+    navigateTo(ctaTarget);
     maybeCloseDrawer();
   });
 }
@@ -1122,11 +1139,11 @@ document.getElementById("celebration").addEventListener("click", (e) => {
 });
 function goNext() {
   const n = nextTopic(STATE.currentId);
-  if (n) { Audio.stop(); STATE.currentId = n.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
+  if (n) { Audio.stop(); navigateTo(n.id); }
 }
 function goPrev() {
   const p = prevTopic(STATE.currentId);
-  if (p) { Audio.stop(); STATE.currentId = p.id; saveState(); renderAll(); window.scrollTo({ top: 0, behavior: "instant" }); }
+  if (p) { Audio.stop(); navigateTo(p.id); }
 }
 
 /* Reset / Export / Import */
@@ -1194,6 +1211,17 @@ document.addEventListener("keydown", (e) => {
 
 /* Init */
 document.getElementById("search").value = STATE.search || "";
+(function initHashRouting() {
+  const fromHash = (window.location.hash || "").replace(/^#/, "");
+  if (fromHash && topicById(fromHash)) {
+    STATE.currentId = fromHash;
+    saveState();
+  } else if (fromHash) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  } else if (STATE.currentId !== "__home" && topicById(STATE.currentId)) {
+    history.replaceState({ id: STATE.currentId }, "", "#" + STATE.currentId);
+  }
+})();
 renderAll();
 </script>
 </body>
